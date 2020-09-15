@@ -28,7 +28,7 @@
 <meta property="og:description" content="模型原理PageRank一个网页重要性是各入链网页重要性投票之和  S(V_i)&#x3D;\displaystyle (1-d)+d*\sum_{j\in In(V_i)}\frac{1}{\lvert Out(V_j)\rvert}S(V_j)其中，$V_i$表示某个网页，$V_j$表示链接到$V_i$的网页（即$V_i$的入链），$S(V_i)$表示网页$V_i$的PR值，$In(V_i)$表示网页$">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-15T10:49:59.000Z">
-<meta property="article:modified_time" content="2020-09-15T10:56:24.796Z">
+<meta property="article:modified_time" content="2020-09-15T11:00:04.430Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
 
@@ -179,7 +179,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-09-15 18:49:59 / Modified: 18:56:24" itemprop="dateCreated datePublished" datetime="2020-09-15T18:49:59+08:00">2020-09-15</time>
+              <time title="Created: 2020-09-15 18:49:59 / Modified: 19:00:04" itemprop="dateCreated datePublished" datetime="2020-09-15T18:49:59+08:00">2020-09-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -210,7 +210,7 @@ S(V_i)=\displaystyle (1-d)+d*\sum_{j\in In(V_i)}\frac{1}{\lvert Out(V_j)\rvert}S
 WS(V_i)=\displaystyle (1-d)+d*\sum_{V_j\in In(V_i)}\frac{\omega_{ji}}{\sum_{V_k\in Out(V_j)}\omega_{jk}}WS(V_j)</script><p>其中，$V_i$表示某个词语，$V_j$表示和$V_i$共现的词，$WS(V_i)$表示词语$V_i$的重要程度，$In(V_i)$表示词语$V_i$的所有共现词语集合，$\lvert Out(V_j)\rvert$表示共现词语和其他词共现的个数，$d$表示阻尼系数，确保“孤岛”也有WS值。权重项$\omega_{ji}$表示两个词语之间的边链接有不同的重要程度。</p>
 <h4 id="关键句提取"><a href="#关键句提取" class="headerlink" title="关键句提取"></a>关键句提取</h4><p>将文本中的句子看作节点</p>
 <script type="math/tex; mode=display">
-Similarity(S_i,S_j)=\frac{\lvert\lbrace w_k|w_k\in S_i\and w_k\in S_j\rbrace\rvert}{\log(\lvert S_i\rvert)+\log(\lvert S_j\rvert)}</script><p>公式中，$S_i$，$S_j$分别表示两个句子，$w_k$表示句子中的词，那么分子部分的意思是同时出现在两个句子中的同一个词的个数，分母是对句子中词的个数求对数之和。分母这样设计可以遏制较长的句子在相似度计算上的优势。</p>
+Similarity(S_i,S_j)=\frac{\lvert\lbrace w_k|w_k\in S_i,w_k\in S_j\rbrace\rvert}{\log(\lvert S_i\rvert)+\log(\lvert S_j\rvert)}</script><p>公式中，$S_i$，$S_j$分别表示两个句子，$w_k$表示句子中的词，那么分子部分的意思是同时出现在两个句子中的同一个词的个数，分母是对句子中词的个数求对数之和。分母这样设计可以遏制较长的句子在相似度计算上的优势。</p>
 <h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><ul>
 <li>把给定的文本T按照完整句子进行分割</li>
 <li>对于每个句子，进行分词和词性标注处理，并过滤掉停用词，只保留指定词性的单词，如名词、动词、形容词</li>
