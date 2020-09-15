@@ -20,15 +20,19 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="SHolic的博客">
-<meta property="og:url" content="http://example.com/archives/index.html">
+  <meta name="description" content="模型原理PageRank一个网页重要性是各入链网页重要性投票之和  S(V_i)&#x3D;\displaystyle (1-d)+d*\sum_{j\in In(V_i)}\frac{1}{\lvert Out(V_j)\rvert}S(V_j)其中，$V_i$表示某个网页，$V_j$表示链接到$V_i$的网页（即$V_i$的入链），$S(V_i)$表示网页$V_i$的PR值，$In(V_i)$表示网页$">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2.TextRank">
+<meta property="og:url" content="http://example.com/2020/09/15/2-TextRank/index.html">
 <meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="模型原理PageRank一个网页重要性是各入链网页重要性投票之和  S(V_i)&#x3D;\displaystyle (1-d)+d*\sum_{j\in In(V_i)}\frac{1}{\lvert Out(V_j)\rvert}S(V_j)其中，$V_i$表示某个网页，$V_j$表示链接到$V_i$的网页（即$V_i$的入链），$S(V_i)$表示网页$V_i$的PR值，$In(V_i)$表示网页$">
 <meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-15T10:49:59.000Z">
+<meta property="article:modified_time" content="2020-09-15T10:51:08.277Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://example.com/archives/">
+<link rel="canonical" href="http://example.com/2020/09/15/2-TextRank/">
 
 
 <script id="page-configurations">
@@ -36,12 +40,12 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'en'
   };
 </script>
 
-  <title>Archive | SHolic的博客</title>
+  <title>2.TextRank | SHolic的博客</title>
   
 
 
@@ -144,70 +148,103 @@
         <div class="content-wrap">
           
 
-          <div class="content archive">
+          <div class="content post posts-expand">
             
 
+    
   
   
-  
-  <div class="post-block">
-    <div class="posts-collapse">
-      <div class="collection-title">
-        <span class="collection-header">Um..! 2 posts in total. Keep on posting.</span>
-      </div>
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/2-TextRank/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          2.TextRank
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2020-09-15 18:49:59 / Modified: 18:51:08" itemprop="dateCreated datePublished" datetime="2020-09-15T18:49:59+08:00">2020-09-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
 
       
-    <div class="collection-year">
-      <span class="collection-header">2020</span>
-    </div>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2020-09-15T18:49:59+08:00"
-              content="2020-09-15">
-          09-15
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/09/15/2-TextRank/" itemprop="url">
-            <span itemprop="name">2.TextRank</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2020-09-15T17:57:00+08:00"
-              content="2020-09-15">
-          09-15
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/09/15/1-%E6%96%B0%E8%AF%8D%E5%8F%91%E7%8E%B0/" itemprop="url">
-            <span itemprop="name">1.新词发现</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
+        <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="PageRank"><a href="#PageRank" class="headerlink" title="PageRank"></a>PageRank</h3><p>一个网页重要性是各入链网页重要性投票之和</p>
+<script type="math/tex; mode=display">
+S(V_i)=\displaystyle (1-d)+d*\sum_{j\in In(V_i)}\frac{1}{\lvert Out(V_j)\rvert}S(V_j)</script><p>其中，$V_i$表示某个网页，$V_j$表示链接到$V_i$的网页（即$V_i$的入链），$S(V_i)$表示网页$V_i$的PR值，$In(V_i)$表示网页$V_i$的所有入链的集合，$\lvert Out(V_j)\rvert$表示入链网页的出链个数，$d$表示阻尼系数，确保“孤岛”也有PR值。</p>
+<h3 id="TextRank"><a href="#TextRank" class="headerlink" title="TextRank"></a>TextRank</h3><h4 id="关键字提取"><a href="#关键字提取" class="headerlink" title="关键字提取"></a>关键字提取</h4><p>与PageRank类似，投票是共现频率</p>
+<script type="math/tex; mode=display">
+WS(V_i)=\displaystyle (1-d)+d*\sum_{V_j\in In(V_i)}\frac{\omega_{ji}}{\sum_{V_k\in Out(V_j)}\omega_{jk}}WS(V_j)</script><p>其中，$V_i$表示某个词语，$V_j$表示和$V_i$共现的词，$WS(V_i)$表示词语$V_i$的重要程度，$In(V_i)$表示词语$V_i$的所有共现词语集合，$\lvert Out(V_j)\rvert$表示共现词语和其他词共现的个数，$d$表示阻尼系数，确保“孤岛”也有WS值。权重项$\omega_{ji}$表示两个词语之间的边链接有不同的重要程度。</p>
+<h4 id="关键句提取"><a href="#关键句提取" class="headerlink" title="关键句提取"></a>关键句提取</h4><p>将文本中的句子看作节点</p>
+<script type="math/tex; mode=display">
+Similarity(S_i,S_j)=\frac{\lvert\lbrace w_k|w_k\in S_i\and w_k\in S_j\rbrace\rvert}{\log(\lvert S_i\rvert)+\log(\lvert S_j\rvert)}</script><p>公式中，$S_i$，$S_j$分别表示两个句子，$w_k$表示句子中的词，那么分子部分的意思是同时出现在两个句子中的同一个词的个数，分母是对句子中词的个数求对数之和。分母这样设计可以遏制较长的句子在相似度计算上的优势。</p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><ul>
+<li>把给定的文本T按照完整句子进行分割</li>
+<li>对于每个句子，进行分词和词性标注处理，并过滤掉停用词，只保留指定词性的单词，如名词、动词、形容词</li>
+<li>构建候选关键词图$G = (V,E)$，其中$V$为节点集，由上一步生成的候选关键词组成，然后采用共现关系（co-occurrence）构造任两点之间的边，两个节点之间存在边仅当它们对应的词汇在长度为K的窗口中共现，K表示窗口大小，即最多共现K个单词</li>
+<li>根据上面公式，迭代传播各节点的权重，直至收敛</li>
+<li>对节点权重进行倒序排序，从而得到最重要的T个单词，作为候选关键词</li>
+<li>由上一步得到最重要的T个单词，在原始文本中进行标记，若形成相邻词组，则组合成多词关键词</li>
+</ul>
+<p>我们可以根据句子相似度公式循环计算任意两个句子之间的相似度，根据阈值去掉两个节点之间相似度较低的边连接，构建出节点连接图，然后计算TextRank值，最后对所有TextRank值排序，选出TextRank值最高的几个词语对应的句子作为摘要。 </p>
 
     </div>
-  </div>
-  
-  
-  
 
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/15/1-%E6%96%B0%E8%AF%8D%E5%8F%91%E7%8E%B0/" rel="prev" title="1.新词发现">
+      <i class="fa fa-chevron-left"></i> 1.新词发现
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
   
 
 
@@ -260,6 +297,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">模型原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PageRank"><span class="nav-number">1.1.</span> <span class="nav-text">PageRank</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TextRank"><span class="nav-number">1.2.</span> <span class="nav-text">TextRank</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%AD%97%E6%8F%90%E5%8F%96"><span class="nav-number">1.2.1.</span> <span class="nav-text">关键字提取</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%8F%A5%E6%8F%90%E5%8F%96"><span class="nav-number">1.2.2.</span> <span class="nav-text">关键句提取</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">算法</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
