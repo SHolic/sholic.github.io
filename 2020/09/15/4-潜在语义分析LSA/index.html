@@ -20,28 +20,36 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="SHolic的博客">
-<meta property="og:url" content="http://example.com/index.html">
+  <meta name="description" content="预备知识词频-逆文本频率 TF-IDF词频$TF$会把那些类似停用词的重要性放大，因此需要逆文本频率$IDF$来中和  词频(TF)&#x3D;\frac{某个词再分帐中的出现次数}{文章的总词数} 逆文本频率(IDF)&#x3D;\log\frac{词库的文档总数+1}{包含该词的文档数+1}+1 TF-IDF&#x3D;词频(TF)\times 逆文档频率(IDF)奇异值分解SVD奇异值分解，相当于非方阵的特征值 特征值分">
+<meta property="og:type" content="article">
+<meta property="og:title" content="4.潜在语义分析LSA">
+<meta property="og:url" content="http://example.com/2020/09/15/4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/index.html">
 <meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="预备知识词频-逆文本频率 TF-IDF词频$TF$会把那些类似停用词的重要性放大，因此需要逆文本频率$IDF$来中和  词频(TF)&#x3D;\frac{某个词再分帐中的出现次数}{文章的总词数} 逆文本频率(IDF)&#x3D;\log\frac{词库的文档总数+1}{包含该词的文档数+1}+1 TF-IDF&#x3D;词频(TF)\times 逆文档频率(IDF)奇异值分解SVD奇异值分解，相当于非方阵的特征值 特征值分">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2020/09/15/4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/img/LSA1.png">
+<meta property="og:image" content="http://example.com/2020/09/15/4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/img/LSA2.png">
+<meta property="og:image" content="http://example.com/2020/09/15/4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/img/LSA3.png">
+<meta property="article:published_time" content="2020-09-15T11:10:26.000Z">
+<meta property="article:modified_time" content="2020-09-15T11:14:41.114Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/15/4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/img/LSA1.png">
 
-<link rel="canonical" href="http://example.com/">
+<link rel="canonical" href="http://example.com/2020/09/15/4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'en'
   };
 </script>
 
-  <title>SHolic的博客</title>
+  <title>4.潜在语义分析LSA | SHolic的博客</title>
   
 
 
@@ -144,9 +152,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
@@ -162,10 +171,9 @@
       <meta itemprop="name" content="SHolic的博客">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/09/15/4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/" class="post-title-link" itemprop="url">4.潜在语义分析LSA</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          4.潜在语义分析LSA
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -198,7 +206,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h2><h3 id="词频-逆文本频率-TF-IDF"><a href="#词频-逆文本频率-TF-IDF" class="headerlink" title="词频-逆文本频率 TF-IDF"></a>词频-逆文本频率 TF-IDF</h3><p>词频$TF$会把那些类似停用词的重要性放大，因此需要逆文本频率$IDF$来中和</p>
+        <h2 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h2><h3 id="词频-逆文本频率-TF-IDF"><a href="#词频-逆文本频率-TF-IDF" class="headerlink" title="词频-逆文本频率 TF-IDF"></a>词频-逆文本频率 TF-IDF</h3><p>词频$TF$会把那些类似停用词的重要性放大，因此需要逆文本频率$IDF$来中和</p>
 <script type="math/tex; mode=display">
 词频(TF)=\frac{某个词再分帐中的出现次数}{文章的总词数}</script><script type="math/tex; mode=display">
 逆文本频率(IDF)=\log\frac{词库的文档总数+1}{包含该词的文档数+1}+1</script><script type="math/tex; mode=display">
@@ -271,295 +279,30 @@ TF-IDF=词频(TF)\times 逆文档频率(IDF)</script><h2 id="模型原理"><a hr
 <p>以第二种情况为例</p>
 <p><img src="img\LSA3.png" alt="LSA3"></p>
 
-      
     </div>
 
     
     
     
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/3-EM%E7%AE%97%E6%B3%95/">
+        
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="sholic">
-      <meta itemprop="description" content="">
-    </span>
 
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="SHolic的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/09/15/3-EM%E7%AE%97%E6%B3%95/" class="post-title-link" itemprop="url">3.EM算法</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2020-09-15 19:04:35 / Modified: 19:04:58" itemprop="dateCreated datePublished" datetime="2020-09-15T19:04:35+08:00">2020-09-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><p>若有未知的有隐含数据和模型参数，无法直接用极大化对数似然函数得到模型分布的参数。</p>
-<p>需要先猜想隐含数据（EM算法的E步），接着基于观察数据和猜测的隐含数据一起来极大化对数似然，求解我们的模型参数（EM算法的M步)。</p>
-<p>m个样本观察数据$x=(x^{(1)},x^{(2)},\ldots,x^{(m)})$，隐含数据$z=(z^{(1)},z^{(2)},\ldots,z^{(m)})$，求参数$\theta$</p>
-<script type="math/tex; mode=display">
-\begin{align}\theta
-&=\arg\max_\theta\sum_{i=1}^m\log\sum_{z^{(i)}}P(x^{(i)},z^{(i)};\theta)\\
-&=\arg\max_\theta\sum_{i=1}^m\log\sum_{z^{(i)}}Q_i(z^{(i)})\frac{P(x^{(i)},z^{(i)};\theta)}{Q_i(z^{(i)})}\\
-&\ge\arg\max_\theta\sum_{i=1}^m\sum_{z^{(i)}}Q_i(z^{(i)})\log\frac{P(x^{(i)},z^{(i)};\theta)}{Q_i(z^{(i)})}\end{align}</script><p>其中用到Jensen不等式，如果$f(x)$为凸函数，则</p>
-<script type="math/tex; mode=display">
-f(E(x))\ge E(f(x))</script><p>或者</p>
-<script type="math/tex; mode=display">
-\log\sum_j\lambda_jy_j\ge\sum_j\lambda_j\log y_j,\lambda_j\ge0,\sum_j\lambda_j=1</script><p>若要满足Jessen不等式，则：</p>
-<script type="math/tex; mode=display">
-\frac{P(x^{(i)},z^{(i)};\theta)}{Q_i(z^{(i)})}=c,c为常数</script><p>由于$Q_i(z^{(i)})$为分布，满足：</p>
-<script type="math/tex; mode=display">
-\sum_zQ_i(z^{(i)})=1</script><p>由上两式得：</p>
-<script type="math/tex; mode=display">
-Q_i(z^{(i)})=\frac{P(x^{i},z^{(i)};\theta)}{\sum_zP(x^{(i)},z^{(i)};\theta)}=\frac{P(x^{(i)},z^{(i)};\theta)}{P(x^{(i)},\theta)}=P(z^{(i)}|x^{(i)};\theta)</script><p>所以：</p>
-<script type="math/tex; mode=display">
-\displaystyle\theta\propto\arg\max_\theta\sum_{i=1}^m\sum_{z^{(i)}}P(z^{(i)}|x^{(i)};\theta)\log P(x^{(i)},z^{(i)};\theta)</script><p>其中$Q_i(z^{(i)})=P(z^{(i)}|x^{(i)};\theta)$。</p>
-<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><p>输入：观察数据$x=(x^{(1)},x^{(2)},\ldots,x^{(m)})$，联合分布p(x,z;θ)p(x,z;θ), 条件分布$p(z|x;θ)$, 最大迭代次数$J$。</p>
-<ol>
-<li><p>随机初始化模型参数$\theta$的初值$\theta^0$。</p>
-</li>
-<li><p>for j  from 1 to J开始EM算法迭代：</p>
-<ol>
-<li><p>E步：计算联合分布的条件概率期望：</p>
-<script type="math/tex; mode=display">
-Q_i(z^{(i)})=P(z^{(i)}|x^{(i)};\theta)</script><script type="math/tex; mode=display">
-L(\theta,\theta^j)=\sum_{i=1}^m\sum_{z^{(i)}}Q_i(z^{(i)})\log P(x^{(i)},z^{(i)};\theta)</script></li>
-<li><p>M步：极大化$L(\theta,\theta^j)$,得到$\theta^{j+1}$:</p>
-<script type="math/tex; mode=display">
-\theta^{j+1}=\arg\max_\theta L(\theta,\theta^j)</script></li>
-</ol>
-</li>
-<li><p>如果$\theta^{j+1}$已收敛，则算法结束。否则继续进行E步迭代。</p>
-</li>
-</ol>
-<p>输出：模型参数$\theta$。</p>
-
-      
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/15/3-EM%E7%AE%97%E6%B3%95/" rel="prev" title="3.EM算法">
+      <i class="fa fa-chevron-left"></i> 3.EM算法
+    </a></div>
+      <div class="post-nav-item"></div>
     </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
       </footer>
+    
   </article>
   
   
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/2-TextRank/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="sholic">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="SHolic的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/09/15/2-TextRank/" class="post-title-link" itemprop="url">2.TextRank</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2020-09-15 18:49:59 / Modified: 19:01:51" itemprop="dateCreated datePublished" datetime="2020-09-15T18:49:59+08:00">2020-09-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="PageRank"><a href="#PageRank" class="headerlink" title="PageRank"></a>PageRank</h3><p>一个网页重要性是各入链网页重要性投票之和</p>
-<script type="math/tex; mode=display">
-S(V_i)=\displaystyle (1-d)+d*\sum_{j\in In(V_i)}\frac{1}{\lvert Out(V_j)\rvert}S(V_j)</script><p>其中，$V_i$表示某个网页，$V_j$表示链接到$V_i$的网页（即$V_i$的入链），$S(V_i)$表示网页$V_i$的PR值，$In(V_i)$表示网页$V_i$的所有入链的集合，$\lvert Out(V_j)\rvert$表示入链网页的出链个数，$d$表示阻尼系数，确保“孤岛”也有PR值。</p>
-<h3 id="TextRank"><a href="#TextRank" class="headerlink" title="TextRank"></a>TextRank</h3><h4 id="关键字提取"><a href="#关键字提取" class="headerlink" title="关键字提取"></a>关键字提取</h4><p>与PageRank类似，投票是共现频率</p>
-<script type="math/tex; mode=display">
-WS(V_i)=\displaystyle (1-d)+d*\sum_{V_j\in In(V_i)}\frac{\omega_{ji}}{\sum_{V_k\in Out(V_j)}\omega_{jk}}WS(V_j)</script><p>其中，$V_i$表示某个词语，$V_j$表示和$V_i$共现的词，$WS(V_i)$表示词语$V_i$的重要程度，$In(V_i)$表示词语$V_i$的所有共现词语集合，$\lvert Out(V_j)\rvert$表示共现词语和其他词共现的个数，$d$表示阻尼系数，确保“孤岛”也有WS值。权重项$\omega_{ji}$表示两个词语之间的边链接有不同的重要程度。</p>
-<h4 id="关键句提取"><a href="#关键句提取" class="headerlink" title="关键句提取"></a>关键句提取</h4><p>将文本中的句子看作节点</p>
-<script type="math/tex; mode=display">
-Similarity(S_i,S_j)=\frac{\lvert\lbrace w_k|w_k\in S_i,w_k\in S_j\rbrace\rvert}{\log(\lvert S_i\rvert)+\log(\lvert S_j\rvert)}</script><p>公式中，$S_i$，$S_j$分别表示两个句子，$w_k$表示句子中的词，那么分子部分的意思是同时出现在两个句子中的同一个词的个数，分母是对句子中词的个数求对数之和。分母这样设计可以遏制较长的句子在相似度计算上的优势。</p>
-<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><ul>
-<li>把给定的文本T按照完整句子进行分割</li>
-<li>对于每个句子，进行分词和词性标注处理，并过滤掉停用词，只保留指定词性的单词，如名词、动词、形容词</li>
-<li>构建候选关键词图$G = (V,E)$，其中$V$为节点集，由上一步生成的候选关键词组成，然后采用共现关系（co-occurrence）构造任两点之间的边，两个节点之间存在边仅当它们对应的词汇在长度为K的窗口中共现，K表示窗口大小，即最多共现K个单词</li>
-<li>根据上面公式，迭代传播各节点的权重，直至收敛</li>
-<li>对节点权重进行倒序排序，从而得到最重要的T个单词，作为候选关键词</li>
-<li>由上一步得到最重要的T个单词，在原始文本中进行标记，若形成相邻词组，则组合成多词关键词</li>
-</ul>
-<p>我们可以根据句子相似度公式循环计算任意两个句子之间的相似度，根据阈值去掉两个节点之间相似度较低的边连接，构建出节点连接图，然后计算TextRank值，最后对所有TextRank值排序，选出TextRank值最高的几个词语对应的句子作为摘要。 </p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/1-%E6%96%B0%E8%AF%8D%E5%8F%91%E7%8E%B0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="sholic">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="SHolic的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/09/15/1-%E6%96%B0%E8%AF%8D%E5%8F%91%E7%8E%B0/" class="post-title-link" itemprop="url">1.新词发现</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2020-09-15 17:57:00 / Modified: 18:33:59" itemprop="dateCreated datePublished" datetime="2020-09-15T17:57:00+08:00">2020-09-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="自由程度"><a href="#自由程度" class="headerlink" title="自由程度"></a>自由程度</h3><p>左右信息熵代表左右邻字丰富程度</p>
-<script type="math/tex; mode=display">
-Entropy(w)=\displaystyle -\sum_{w_n\in W_{Neighbor}}P(w_n|w)\log_2P(w_n|w)</script><p>其中$W_{Neighbor}$为字符组合左右邻字的集合。</p>
-<p>自由程度指标：</p>
-<script type="math/tex; mode=display">
-L(w)=\log_2\frac{LE\cdot e^{RE}+RE\cdot e^{LE}}{\lvert LE-RE\rvert}</script><h3 id="凝聚程度"><a href="#凝聚程度" class="headerlink" title="凝聚程度"></a>凝聚程度</h3><p>互信息 (MI) 表示知道了随机变量$X$之后对另一个随机变量$Y$不确定性的减少</p>
-<script type="math/tex; mode=display">
-MI=\displaystyle \sum_{x\in X}\sum_{y \in Y}p(x,y)\log_2\frac{p(x,y)}{p(x)p(y)}</script><p>但由于这里随机变量的取值唯一，我们使用点间互信息(point-wise mutual information)作为衡量这一特征的指标</p>
-<script type="math/tex; mode=display">
-PMI=p(x,y)\log_2\frac{p(x,y)}{p(x)p(y)}</script><h3 id="合词"><a href="#合词" class="headerlink" title="合词"></a>合词</h3><p>从左到右依次计算相邻文本片段的凝聚程度，若达到设定的阈值，则将这两段文本片段整合为一块新的文本片段，然后继续去计算该整合后的文本片段与下一段相邻文本片段的凝聚程度。不断循环，直到无文本片段。 </p>
-<h3 id="切词"><a href="#切词" class="headerlink" title="切词"></a>切词</h3><p>从左到右依次计算相邻文本片段的凝聚程度（与合词不同，每次只计算相邻两个文本片段的凝聚程度），若未达到设定的阈值，则将这两段文本片段进行切分。不断循环，直到无文本片段。</p>
-<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><ol>
-<li>首先将文本拆分为文本片段（字符、英文单词等）</li>
-<li>基于凝聚程度和切词方式对文本进行切分，获得一个粗的词库，同时也对文本做了一次粗的分词</li>
-<li>基于自由程度从上一步的到得词库中筛选出词语</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-
   
 
 
@@ -612,6 +355,7 @@ PMI=p(x,y)\log_2\frac{p(x,y)}{p(x)p(y)}</script><h3 id="合词"><a href="#合词
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%84%E5%A4%87%E7%9F%A5%E8%AF%86"><span class="nav-number">1.</span> <span class="nav-text">预备知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%8D%E9%A2%91-%E9%80%86%E6%96%87%E6%9C%AC%E9%A2%91%E7%8E%87-TF-IDF"><span class="nav-number">1.1.</span> <span class="nav-text">词频-逆文本频率 TF-IDF</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A5%87%E5%BC%82%E5%80%BC%E5%88%86%E8%A7%A3SVD"><span class="nav-number">1.2.</span> <span class="nav-text">奇异值分解SVD</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9D%9E%E8%B4%9F%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3NMF"><span class="nav-number">1.3.</span> <span class="nav-text">非负矩阵分解NMF</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%8D%E9%A2%91-%E9%80%86%E6%96%87%E6%9C%AC%E9%A2%91%E7%8E%87-TF-IDF-1"><span class="nav-number">1.4.</span> <span class="nav-text">词频-逆文本频率 TF-IDF</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">模型原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SVD%E6%96%B9%E6%B3%95"><span class="nav-number">2.1.</span> <span class="nav-text">SVD方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NMF%E6%96%B9%E6%B3%95"><span class="nav-number">2.2.</span> <span class="nav-text">NMF方法</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
