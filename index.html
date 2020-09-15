@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
@@ -24,7 +24,7 @@
 <meta property="og:title" content="SHolic的博客">
 <meta property="og:url" content="http://example.com/index.html">
 <meta property="og:site_name" content="SHolic的博客">
-<meta property="og:locale" content="en_US">
+<meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
 
@@ -37,7 +37,7 @@
     sidebar: "",
     isHome : true,
     isPost : false,
-    lang   : 'en'
+    lang   : 'zh-CN'
   };
 </script>
 
@@ -81,7 +81,7 @@
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="Toggle navigation bar">
+    <div class="toggle" aria-label="切换导航栏">
       <span class="toggle-line toggle-line-first"></span>
       <span class="toggle-line toggle-line-middle"></span>
       <span class="toggle-line toggle-line-last"></span>
@@ -110,17 +110,17 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
   </ul>
@@ -149,7 +149,126 @@
       
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/5-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/15/5-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/" class="post-title-link" itemprop="url">5.概率潜在语义分析pLSA</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-15 19:19:23 / 修改时间：19:21:05" itemprop="dateCreated datePublished" datetime="2020-09-15T19:19:23+08:00">2020-09-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="文档生成"><a href="#文档生成" class="headerlink" title="文档生成"></a>文档生成</h3><p>M篇语料$d_i\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。</p>
+<ol>
+<li>按照概率$P(d_i)$选择一篇文档$d_i$</li>
+<li>选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_i)$（参数$\theta$）选择一个隐含主题类别$z_k$</li>
+<li>选定$z_k$后，从词分布中按照概率$P(w_j|z_k)$（参数$\phi$）选择一个词$w_j$</li>
+</ol>
+<p>如下图：</p>
+<p><img src="img\pLSA.png" alt="pLSA"></p>
+<p>文档中每个词的生成概率为：</p>
+<script type="math/tex; mode=display">
+P(d_i,w_j)=P(d_i)P(w_j|d_i)=P(d_i)\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)</script><p>令$\phi_{kj}$表示词项$w_j$出现在主题$z_k$中的概率，即</p>
+<script type="math/tex; mode=display">
+P(w_j|z_k)=\phi_{k,j},\sum_{w_j\in\mathcal{V}}\phi_{k,j}=1</script><p>令$\theta_{i,k}$表示主题$z_k$出现在文档$d_i$中的概率，即</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i)=\theta_{i,k},\sum_{z_k\in\mathcal{Z}}\theta_{i,k}=1</script><p>令$\Phi=(\phi_1,\phi_2,\ldots,\phi_K)$为K个主题到词的概率，M篇语料$(d_1,d_2,\ldots,d_M)$中每篇文档$d_i$中，$\Theta=(\theta_1,\theta_2,\ldots,\theta_M)$为M个文档到主题的概率。</p>
+<p>令$n(d_i,w_j)$表示词项$w_j$在文档$d_i$中的词频，$n(d_i)$表示文档$d_i$中词的总数，则有：</p>
+<script type="math/tex; mode=display">
+n(d_i)=\sum_{w_j\in\mathcal{V}}n(d_i,w_j)</script><p>由词与词之间独立，文档与文档之间独立，整个语料词分布为：</p>
+<script type="math/tex; mode=display">
+P(W|D)=\prod_{i=1}^M\prod_{j=1}^NP(d_i,w_j)^{n(d_i,w_j)}</script><p>可以得到对数似然函数：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+\mathcal{L(\Phi,\Theta)}&=\log P(W|D)\\
+&=\sum_{i=1}^M\sum_{j=1}^Nn(d_i,w_j)\log P(d_i,w_j)\\
+&=\sum_{i=1}^M\sum_{j=1}^Nn(d_i,w_j)\left(\log P(d_i)+\log\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)\right)\\
+&=\sum_{i=1}^Mn(d_i)\left(\log P(d_i)+\sum_{j=1}^N\frac{n(d_i,w_j)}{n(d_i)}\log\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)\right)\\
+&=\sum_{i=1}^Mn(d_i)\left(\log P(d_i)+\sum_{j=1}^N\frac{n(d_i,w_j)}{n(d_i)}\log\sum_{k=1}^K\phi_{k,j}\theta_{i,k}\right)
+\end{align}</script><h3 id="EM算法求解"><a href="#EM算法求解" class="headerlink" title="EM算法求解"></a>EM算法求解</h3><p>可以使用EM算法，通过$\phi_{k,j}$和$\theta_{m,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过隐参数更新。</p>
+<p>E步，隐变量的后验分布：</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j}\theta_{i,k}}{\sum_{l=1}^K\phi_{l,j}\theta_{i,l}}</script><p>M步，最大化样本分布的对数似然函数$\mathcal{L}$，第一项与参数无关，去掉 ：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+\mathcal{L}&=\sum_{m=1}^M\sum_{j=1}^Nn(d_i,w_j)\log\sum_{k=1}^K\phi_{k,j}\theta_{i,k}\\
+&=\sum_{m=1}^M\sum_{j=1}^Nn(d_i,w_j)\sum_{k=1}^KP(z_k|d_i,w_j)log[\phi_{k,j}\theta_{i,k}]
+\end{align}</script><p>由$\sum_{j=1}^m\phi_{k,j}=1$和$\sum_{k=1}^K\theta_{i,k}=1$，引入拉格朗日乘子，求偏导</p>
+<p>参数更新公式为：</p>
+<script type="math/tex; mode=display">
+\phi_{k,j}=\frac{\sum_{m=1}^Mn(d_i,w_j)P(z_k|d_i,w_j)}{\sum_{m=1}^N\sum_{i=1}^Mn(d_i,w_m)P(z_k|d_i,w_m)}</script><script type="math/tex; mode=display">
+\theta_{i,k}=\frac{\sum_{j=1}^Nn(d_i,w_j)P(z_k|d_i,w_j)}{n(d_i)}</script><h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><p>输入：单词-文本共现数据</p>
+<p>输出：和。</p>
+<ol>
+<li><p>设置参数和的初始值。</p>
+</li>
+<li><p>迭代执行以下E步，M步，直到收敛为止：</p>
+<p>E步：</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j}\theta_{i,k}}{\sum_{l=1}^K\phi_{l,j}\theta_{i,l}}</script><p>M步：</p>
+<script type="math/tex; mode=display">
+\phi_{k,j}=\frac{\sum_{m=1}^Mn(d_i,w_j)P(z_k|d_i,w_j)}{\sum_{m=1}^N\sum_{i=1}^Mn(d_i,w_m)P(z_k|d_i,w_m)}</script><script type="math/tex; mode=display">
+\theta_{i,k}=\frac{\sum_{j=1}^Nn(d_i,w_j)P(z_k|d_i,w_j)}{n(d_i)}</script></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -172,16 +291,16 @@
               <span class="post-meta-item-icon">
                 <i class="far fa-calendar"></i>
               </span>
-              <span class="post-meta-item-text">Posted on</span>
+              <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="Created: 2020-09-15 19:10:26 / Modified: 19:14:41" itemprop="dateCreated datePublished" datetime="2020-09-15T19:10:26+08:00">2020-09-15</time>
+              <time title="创建时间：2020-09-15 19:10:26 / 修改时间：19:14:41" itemprop="dateCreated datePublished" datetime="2020-09-15T19:10:26+08:00">2020-09-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
-              <span class="post-meta-item-text">In</span>
+              <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
                   <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
                 </span>
@@ -288,7 +407,7 @@ TF-IDF=词频(TF)\times 逆文档频率(IDF)</script><h2 id="模型原理"><a hr
       
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/3-EM%E7%AE%97%E6%B3%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -311,16 +430,16 @@ TF-IDF=词频(TF)\times 逆文档频率(IDF)</script><h2 id="模型原理"><a hr
               <span class="post-meta-item-icon">
                 <i class="far fa-calendar"></i>
               </span>
-              <span class="post-meta-item-text">Posted on</span>
+              <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="Created: 2020-09-15 19:04:35 / Modified: 19:04:58" itemprop="dateCreated datePublished" datetime="2020-09-15T19:04:35+08:00">2020-09-15</time>
+              <time title="创建时间：2020-09-15 19:04:35 / 修改时间：19:04:58" itemprop="dateCreated datePublished" datetime="2020-09-15T19:04:35+08:00">2020-09-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
-              <span class="post-meta-item-text">In</span>
+              <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
                   <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
                 </span>
@@ -394,7 +513,7 @@ L(\theta,\theta^j)=\sum_{i=1}^m\sum_{z^{(i)}}Q_i(z^{(i)})\log P(x^{(i)},z^{(i)};
       
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/2-TextRank/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -417,16 +536,16 @@ L(\theta,\theta^j)=\sum_{i=1}^m\sum_{z^{(i)}}Q_i(z^{(i)})\log P(x^{(i)},z^{(i)};
               <span class="post-meta-item-icon">
                 <i class="far fa-calendar"></i>
               </span>
-              <span class="post-meta-item-text">Posted on</span>
+              <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="Created: 2020-09-15 18:49:59 / Modified: 19:01:51" itemprop="dateCreated datePublished" datetime="2020-09-15T18:49:59+08:00">2020-09-15</time>
+              <time title="创建时间：2020-09-15 18:49:59 / 修改时间：19:01:51" itemprop="dateCreated datePublished" datetime="2020-09-15T18:49:59+08:00">2020-09-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
-              <span class="post-meta-item-text">In</span>
+              <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
                   <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
                 </span>
@@ -479,7 +598,7 @@ Similarity(S_i,S_j)=\frac{\lvert\lbrace w_k|w_k\in S_i,w_k\in S_j\rbrace\rvert}{
       
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/1-%E6%96%B0%E8%AF%8D%E5%8F%91%E7%8E%B0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -502,16 +621,16 @@ Similarity(S_i,S_j)=\frac{\lvert\lbrace w_k|w_k\in S_i,w_k\in S_j\rbrace\rvert}{
               <span class="post-meta-item-icon">
                 <i class="far fa-calendar"></i>
               </span>
-              <span class="post-meta-item-text">Posted on</span>
+              <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="Created: 2020-09-15 17:57:00 / Modified: 18:33:59" itemprop="dateCreated datePublished" datetime="2020-09-15T17:57:00+08:00">2020-09-15</time>
+              <time title="创建时间：2020-09-15 17:57:00 / 修改时间：18:33:59" itemprop="dateCreated datePublished" datetime="2020-09-15T17:57:00+08:00">2020-09-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
-              <span class="post-meta-item-text">In</span>
+              <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
                   <a href="/categories/Natural-Language-Processing/" itemprop="url" rel="index"><span itemprop="name">Natural Language Processing</span></a>
                 </span>
@@ -603,10 +722,10 @@ PMI=p(x,y)\log_2\frac{p(x,y)}{p(x)p(y)}</script><h3 id="合词"><a href="#合词
 
       <ul class="sidebar-nav motion-element">
         <li class="sidebar-nav-toc">
-          Table of Contents
+          文章目录
         </li>
         <li class="sidebar-nav-overview">
-          Overview
+          站点概览
         </li>
       </ul>
 
@@ -625,15 +744,15 @@ PMI=p(x,y)\log_2\frac{p(x,y)}{p(x)p(y)}</script><h3 id="合词"><a href="#合词
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">4</span>
-          <span class="site-state-item-name">posts</span>
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
         <span class="site-state-item-count">1</span>
-        <span class="site-state-item-name">categories</span></a>
+        <span class="site-state-item-name">分类</span></a>
       </div>
   </nav>
 </div>
@@ -665,7 +784,7 @@ PMI=p(x,y)\log_2\frac{p(x,y)}{p(x)p(y)}</script><h3 id="合词"><a href="#合词
   </span>
   <span class="author" itemprop="copyrightHolder">sholic</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
   </div>
 
         
