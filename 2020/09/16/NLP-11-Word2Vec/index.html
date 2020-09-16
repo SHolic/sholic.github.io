@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="模型原理 预测的目标是让其在词表中的概率最大 CBOW：输入context，预测中心词，迭代context Skip-Gram：for所有context，输入中心词，预测context，迭代中心词（实际context） 层次softmax：以频率作为霍夫曼树权重，只更新深度路径sigmoid二分类参数 负采样：以频率作为采样权重，采样负例，只更新正负例sigmoid二分类参数  网络结构CBOW">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-11-Word2Vec">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-11-Word2Vec/index.html">
+<meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="模型原理 预测的目标是让其在词表中的概率最大 CBOW：输入context，预测中心词，迭代context Skip-Gram：for所有context，输入中心词，预测context，迭代中心词（实际context） 层次softmax：以频率作为霍夫曼树权重，只更新深度路径sigmoid二分类参数 负采样：以频率作为采样权重，采样负例，只更新正负例sigmoid二分类参数  网络结构CBOW">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-11-Word2Vec/img/word2vec1.jpg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-11-Word2Vec/img/word2vec2.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-11-Word2Vec/img/word2vec3.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-11-Word2Vec/img/word2vec4.png">
+<meta property="article:published_time" content="2020-09-16T01:54:58.000Z">
+<meta property="article:modified_time" content="2020-09-16T01:58:47.637Z">
+<meta property="article:author" content="sholic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-11-Word2Vec/img/word2vec1.jpg">
+
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-11-Word2Vec/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>NLP-11-Word2Vec | SHolic的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">SHolic的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-11-Word2Vec/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-11-Word2Vec
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 09:54:58 / 修改时间：09:58:47" itemprop="dateCreated datePublished" datetime="2020-09-16T09:54:58+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><ul>
+<li>预测的目标是让其在词表中的概率最大</li>
+<li>CBOW：输入context，预测中心词，迭代context</li>
+<li>Skip-Gram：for所有context，输入中心词，预测context，迭代中心词（实际context）</li>
+<li>层次softmax：以频率作为霍夫曼树权重，只更新深度路径sigmoid二分类参数</li>
+<li>负采样：以频率作为采样权重，采样负例，只更新正负例sigmoid二分类参数</li>
+</ul>
+<h3 id="网络结构"><a href="#网络结构" class="headerlink" title="网络结构"></a>网络结构</h3><p><strong>CBOW</strong></p>
+<p><img src="img\word2vec1.jpg" alt=""></p>
+<p><strong>Skip-Gram</strong></p>
+<p><img src="img\word2vec2.png" alt=""></p>
+<h3 id="层次softmax"><a href="#层次softmax" class="headerlink" title="层次softmax"></a>层次softmax</h3><p><strong>梯度计算</strong></p>
+<p><img src="img\word2vec3.png" alt=""></p>
+<p>先对输出层构建霍夫曼树。在word2vec中，采用二元逻辑回归的方法，即规定沿着左子树走，那么就是负类(霍夫曼树编码1)，沿着右子树走，那么就是正类(霍夫曼树编码0)。判别正类和负类的方法是使用sigmoid函数，即：</p>
+<script type="math/tex; mode=display">
+P(+)=\sigma(x_w^T\theta)=\frac{1}{1+e^{-x_w^T\theta}}</script><p>其中$x_w$是当前内部节点的词向量，而$\theta$则是我们需要从训练样本求出的逻辑回归的模型参数。 </p>
+<p>定义输入的词为$w$,其从输入层词向量求和平均后的霍夫曼树根节点词向量为$x_w$, 从根节点到$w$所在的叶子节点，包含的节点总数为$l_w$, $w$在霍夫曼树中从根节点开始，经过的第$i$个节点表示为$p_i^w$，对应的霍夫曼编码为$d^w_i\in\{0,1\}$，其中$i=2,3,\ldots,l_w$。而该节点对应的模型参数表示为$θ^w_i$，其中$i=1,2,\ldots,l_w−1$，没有$i=l_w$是因为模型参数仅仅针对于霍夫曼树的内部节点。 </p>
+<p>定义$w$经过的霍夫曼树某一个节点$j$的逻辑回归概率为$P(d_j^w|x_w,\theta_{j−1}^w)$，其表达式为：</p>
+<script type="math/tex; mode=display">
+P(d^w_j|x_w,\theta_{j-1}^w)=
+\begin{cases}
+\sigma(x^T_w\theta_{j-1}^w)&d_j^w=0\\
+1-\sigma(x^T_w\theta_{j-1}^w)&d_j^w=1
+\end{cases}</script><p>最大似然：</p>
+<script type="math/tex; mode=display">
+\prod_{j=2}^{l_w}P(d^w_j|x_w,\theta_{j-1}^w)=\prod_{j=2}^{l_w}[\sigma(x^T_w\theta^w_{j-1})]^{1-d^w_j}[1-\sigma(x^T_w\theta^w_{j-1})]^{d_j^w}</script><script type="math/tex; mode=display">
+L=\sum_{j=2}^{l_w}((1-d_j^w)\log[\sigma(x^T_w\theta^w_{j-1})]+d_j^w\log[1-\sigma(x^T_w\theta^w_{j-1})])</script><p>计算梯度：</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial \theta_{j-1}^w}=(1-d_j^w-\sigma(x_w^T\theta_{j-1}^w))x_w</script><script type="math/tex; mode=display">
+\frac{\partial L}{\partial x_w}=\sum_{j=2}^{l_w}(1-d_j^w-\sigma(x^T_w\theta_{j-1}^w))\theta_{j-1}^w</script><h3 id="负采样"><a href="#负采样" class="headerlink" title="负采样"></a>负采样</h3><p><strong>梯度计算</strong></p>
+<p>负采样也是采用了二元逻辑回归来求解模型参数，通过负采样，我们得到了$neg$个负例$(context(w),w_i)i=1,2,\ldots,neg$。为了统一描述，我们将正例定义为$w_0$。 </p>
+<p>在逻辑回归中，概率满足： </p>
+<script type="math/tex; mode=display">
+P(context(w_0),w_i)=\begin{cases}
+\sigma(x^T_{w_0}\theta^{w_i})&y_i=1,i=0\\
+1-\sigma(x^T_{w_0}\theta^{w_i})&y_i=0,i=1,2,\dots,neg\end{cases}</script><p>最大似然：</p>
+<script type="math/tex; mode=display">
+\prod_{i=0}^{neg}P(context(w_0),w_i)=\prod_{i=0}^{neg}[\sigma(x^T_{w_0}\theta^{w_i})]^{y_i}[1-\sigma(x^T_{w_0}\theta^{w_i})]^{1-y_i}</script><script type="math/tex; mode=display">
+L=\sum_{i=0}^{neg}y_i\log[\sigma(x^T_{w_0}\theta^{w_i})]+(1-y_i)\log[1-\sigma(x^T_{w_0}\theta^{w_i})]</script><p>计算梯度：</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial \theta^{w_i}}=(y_i-\sigma(x_{w_0}^T\theta^{w_i}))x_{w_0}</script><script type="math/tex; mode=display">
+\frac{\partial L}{\partial x_{w_0}}=\sum_{i=2}^{neg}(y_i-\sigma(x^T_{w_0}\theta^{w_i}))\theta^{w_i}</script><p><strong>采样方法</strong></p>
+<p>在采样前，我们将这段长度为1的线段划分成$M$等份，这里$M&gt;&gt;V$，这样可以保证每个词对应的线段都会划分成对应的小块。而$M$份中的每一份都会落在某一个词对应的线段上。在采样的时候，我们只需要从$M$个位置中采样出$neg$个位置就行，此时采样到的每一个位置对应到的线段所属的词就是我们的负例词。 </p>
+<p><img src="img\word2vec4.png" alt=""></p>
+<p>每个词$w$的线段长度由下式决定:</p>
+<script type="math/tex; mode=display">
+len(w)=\frac{count(w)^{3/4}}{\sum_{u\in vocab}count(u)^{3/4}}</script><h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><h3 id="霍夫曼树"><a href="#霍夫曼树" class="headerlink" title="霍夫曼树"></a>霍夫曼树</h3><p>输入：权值为$(w_1,w_2,…w_n)$的$n$个节点</p>
+<p>输出：对应的霍夫曼树</p>
+<ol>
+<li>将$(w_1,w_2,…w_n)$看做是有$n$棵树的森林，每个树仅有一个节点。</li>
+<li>在森林中选择根节点权值最小的两棵树进行合并，得到一个新的树，这两颗树分布作为新树的左右子树。新树的根节点权重为左右子树的根节点权重之和。</li>
+<li>将之前的根节点权值最小的两棵树从森林删除，并把新树加入森林。</li>
+<li>重复步骤2和3直到森林里只有一棵树为止。</li>
+</ol>
+<h3 id="CBOW层次softmax"><a href="#CBOW层次softmax" class="headerlink" title="CBOW层次softmax"></a>CBOW层次softmax</h3><p>输入：基于CBOW的语料训练样本，词向量的维度大小$M$，CBOW的上下文大小$2c$,步长$\eta$</p>
+<p>输出：霍夫曼树的内部节点模型参数$\theta$，所有的词向量$w$</p>
+<ol>
+<li><p>基于语料训练样本建立霍夫曼树。</p>
+</li>
+<li><p>随机初始化所有的模型参数$\theta$，所有的词向量$w$</p>
+</li>
+<li><p>进行梯度上升迭代过程，对于训练集中的每一个样本$(context(w),w)$做如下处理：</p>
+<ol>
+<li><p>e=0， 计算$x_w=\frac{1}{2c}\sum_{i=1}^{2c}x_i$</p>
+</li>
+<li><p>for $j=2$ to $l_w$, 计算：</p>
+<script type="math/tex; mode=display">
+f=\sigma(x_w^T\theta_{j-1}^w)</script><script type="math/tex; mode=display">
+g=(1-d_j^w-f)\eta</script><script type="math/tex; mode=display">
+e=e+g\theta_{j-1}^w</script><script type="math/tex; mode=display">
+\theta_{j-1}^w=\theta_{j-1}^w+gx_w</script></li>
+<li><p>对于$context(w)$中的每一个词向量$x_i$(共2c个)进行更新：</p>
+<script type="math/tex; mode=display">
+x_i=x_i+e</script></li>
+<li><p>如果梯度收敛，则结束梯度迭代，否则回到步骤3继续迭代。</p>
+</li>
+</ol>
+</li>
+</ol>
+<h3 id="Skip-Gram层次softmax"><a href="#Skip-Gram层次softmax" class="headerlink" title="Skip-Gram层次softmax"></a>Skip-Gram层次softmax</h3><p>输入：基于Skip-Gram的语料训练样本，词向量的维度大小$M$，Skip-Gram的上下文大小$2c$,步长$\eta$</p>
+<p>输出：霍夫曼树的内部节点模型参数$\theta$，所有的词向量$w$</p>
+<ol>
+<li><p>基于语料训练样本建立霍夫曼树。</p>
+</li>
+<li><p>随机初始化所有的模型参数$\theta$，所有的词向量$w$</p>
+</li>
+<li><p>进行梯度上升迭代过程，对于训练集中的每一个样本$(w,context(w))$做如下处理：</p>
+<ol>
+<li><p>for $i=1$ to 2c：</p>
+<ol>
+<li>$e=0$</li>
+<li>for $j=2$ to $l_w$, 计算：</li>
+</ol>
+<script type="math/tex; mode=display">
+f=\sigma(x_i^T\theta_{j-1}^w)</script><script type="math/tex; mode=display">
+g=(1-d_j^w-f)\eta</script><script type="math/tex; mode=display">
+e=e+g\theta_{j-1}^w</script><script type="math/tex; mode=display">
+\theta_{j-1}^w=\theta_{j-1}^w+gx_i</script><ol>
+<li>词向量更新：</li>
+</ol>
+<script type="math/tex; mode=display">
+x_i=x_i+e</script></li>
+<li><p>如果梯度收敛，则结束梯度迭代，否则回到步骤3继续迭代。</p>
+</li>
+</ol>
+</li>
+</ol>
+<h3 id="CBOW负采样"><a href="#CBOW负采样" class="headerlink" title="CBOW负采样"></a>CBOW负采样</h3><p>输入：基于CBOW的语料训练样本，词向量的维度大小$Mcount$，CBOW的上下文大小$2c$,步长$\eta$, 负采样的个数$neg$</p>
+<p>输出：词汇表每个词对应的模型参数$\theta$，所有的词向量$x_w$</p>
+<ol>
+<li><p>随机初始化所有的模型参数$\theta$，所有的词向量$w$</p>
+</li>
+<li><p>对于每个训练样本$(context(w_0),w_0)$，负采样出neg个负例中心词$w_i,i=1,2,\ldots,neg$</p>
+</li>
+<li><p>进行梯度上升迭代过程，对于训练集中的每一个样本$(context(w_0),w_0,w_1,\ldots,w_{neg})$做如下处理：</p>
+<ol>
+<li><p>$e=0$， 计算$x_{w_0}=\frac{1}{2c}\sum_{i=1}^{2c}x_i$</p>
+</li>
+<li><p>for $i=0$ to $neg$, 计算：</p>
+<script type="math/tex; mode=display">
+f=\sigma(x_{w_0}^Tθ^{w_i})</script><script type="math/tex; mode=display">
+g=(y_i−f)\eta</script><script type="math/tex; mode=display">
+e=e+g\theta^{w_i}</script><script type="math/tex; mode=display">
+\theta^{w_i}=\theta^{w_i}+gx_{w_0}</script></li>
+<li><p>对于$context(w)$中的每一个词向量$x_k$(共2c个)进行更新：</p>
+<script type="math/tex; mode=display">
+x_k=x_k+e</script></li>
+<li><p>如果梯度收敛，则结束梯度迭代，否则回到步骤3继续迭代。</p>
+</li>
+</ol>
+</li>
+</ol>
+<h3 id="Skip-Gram负采样"><a href="#Skip-Gram负采样" class="headerlink" title="Skip-Gram负采样"></a>Skip-Gram负采样</h3><p>输入：基于Skip-Gram的语料训练样本，词向量的维度大小$Mcount$，Skip-Gram的上下文大小$2c$,步长$\eta$, 负采样的个数$neg$</p>
+<p>输出：词汇表每个词对应的模型参数$\theta$，所有的词向量$x_w$</p>
+<ol>
+<li><p>随机初始化所有的模型参数$\theta$，所有的词向量$w$</p>
+</li>
+<li><p>对于每个训练样本$(context(w_0),w_0)$，负采样出neg个负例中心词$wi,i=1,2,\ldots,neg$</p>
+</li>
+<li><p>进行梯度上升迭代过程，对于训练集中的每一个样本$(context(w_0),w_0,w_1,\ldots,w_{neg})$做如下处理：</p>
+<ol>
+<li><p>for $i=1$ to 2c：</p>
+<ol>
+<li>$e=0$</li>
+<li>for $j=0$ to $neg$, 计算：</li>
+</ol>
+<script type="math/tex; mode=display">
+f=\sigma(x_{w_{0i}}^Tθ^{w_j})</script><script type="math/tex; mode=display">
+g=(y_j−f)\eta</script><script type="math/tex; mode=display">
+e=e+g\theta^{w_j}</script><script type="math/tex; mode=display">
+\theta^{w_j}=\theta^{w_j}+gx_{w_{0i}}</script><ol>
+<li>词向量更新： </li>
+</ol>
+<script type="math/tex; mode=display">
+x_{w_{0i}}=x_{w_{0i}}+e</script></li>
+<li><p>如果梯度收敛，则结束梯度迭代，否则回到步骤3继续迭代。</p>
+</li>
+</ol>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-10-%E6%9D%A1%E4%BB%B6%E9%9A%8F%E6%9C%BA%E5%9C%BACRF/" rel="prev" title="NLP-10-条件随机场CRF">
+      <i class="fa fa-chevron-left"></i> NLP-10-条件随机场CRF
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-12-GloVe/" rel="next" title="NLP-12-GloVe">
+      NLP-12-GloVe <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">模型原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E7%BB%93%E6%9E%84"><span class="nav-number">1.1.</span> <span class="nav-text">网络结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B1%82%E6%AC%A1softmax"><span class="nav-number">1.2.</span> <span class="nav-text">层次softmax</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B4%9F%E9%87%87%E6%A0%B7"><span class="nav-number">1.3.</span> <span class="nav-text">负采样</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9C%8D%E5%A4%AB%E6%9B%BC%E6%A0%91"><span class="nav-number">2.1.</span> <span class="nav-text">霍夫曼树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CBOW%E5%B1%82%E6%AC%A1softmax"><span class="nav-number">2.2.</span> <span class="nav-text">CBOW层次softmax</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Skip-Gram%E5%B1%82%E6%AC%A1softmax"><span class="nav-number">2.3.</span> <span class="nav-text">Skip-Gram层次softmax</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CBOW%E8%B4%9F%E9%87%87%E6%A0%B7"><span class="nav-number">2.4.</span> <span class="nav-text">CBOW负采样</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Skip-Gram%E8%B4%9F%E9%87%87%E6%A0%B7"><span class="nav-number">2.5.</span> <span class="nav-text">Skip-Gram负采样</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sholic</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sholic</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
