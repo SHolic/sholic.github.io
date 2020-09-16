@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="模型原理HMM模型特征  问题是基于序列的，比如时间序列，或者状态序列。 问题中有两类数据，一类序列数据是可以观测到的，即观测序列；而另一类数据是不能观察到的，即隐藏状态序列，简称状态序列。   HMM定义  假设$Q&#x3D;\lbrace q_1,q_2,\ldots,q_N\rbrace$是所有可能的隐藏状态的集合，$V&#x3D;\lbrace v_1,v_2,\ldots,v_M\rbrace$ 是所有可">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-09-隐式马尔科夫链HMM">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/index.html">
+<meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="模型原理HMM模型特征  问题是基于序列的，比如时间序列，或者状态序列。 问题中有两类数据，一类序列数据是可以观测到的，即观测序列；而另一类数据是不能观察到的，即隐藏状态序列，简称状态序列。   HMM定义  假设$Q&#x3D;\lbrace q_1,q_2,\ldots,q_N\rbrace$是所有可能的隐藏状态的集合，$V&#x3D;\lbrace v_1,v_2,\ldots,v_M\rbrace$ 是所有可">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/img/hmm3.jpg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/img/hmm1.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/img/hmm2.png">
+<meta property="article:published_time" content="2020-09-16T01:41:24.000Z">
+<meta property="article:modified_time" content="2020-09-16T01:47:58.416Z">
+<meta property="article:author" content="sholic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/img/hmm3.jpg">
+
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>NLP-09-隐式马尔科夫链HMM | SHolic的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">SHolic的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-09-隐式马尔科夫链HMM
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 09:41:24 / 修改时间：09:47:58" itemprop="dateCreated datePublished" datetime="2020-09-16T09:41:24+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><p><strong>HMM模型特征</strong></p>
+<ol>
+<li>问题是基于序列的，比如时间序列，或者状态序列。</li>
+<li>问题中有两类数据，一类序列数据是可以观测到的，即观测序列；而另一类数据是不能观察到的，即隐藏状态序列，简称状态序列。 </li>
+</ol>
+<p><strong>HMM定义</strong></p>
+<p><img src="img\hmm3.jpg" alt="hmm3"></p>
+<p>假设$Q=\lbrace q_1,q_2,\ldots,q_N\rbrace$是所有可能的隐藏状态的集合，$V=\lbrace v_1,v_2,\ldots,v_M\rbrace$ 是所有可能的观测状态的集合</p>
+<p>对于一个长度为$T$的序列，$I=\lbrace i_1,i_2,\ldots,i_T\rbrace$是对应的状态序列，$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$是对应的观察序列 </p>
+<p>齐次马尔科夫链假设。即任意时刻的隐藏状态只依赖于它前一个隐藏状态 :</p>
+<script type="math/tex; mode=display">
+a_{ij}=P(i_{t+1}=q_j|i_t=q_i)</script><script type="math/tex; mode=display">
+A=\begin{bmatrix}a_{ij}\end{bmatrix}_{N\times N}</script><p>观测独立性假设。即任意时刻的观察状态只仅仅依赖于当前时刻的隐藏状态 </p>
+<script type="math/tex; mode=display">
+b_j(k)=P(o_t=v_k|i_t=q_j)</script><script type="math/tex; mode=display">
+B=\begin{bmatrix}b_j(k)\end{bmatrix}_{N\times M}</script><p> 在时刻$t=1$的隐藏状态概率分布$\Pi$</p>
+<script type="math/tex; mode=display">
+\pi(i)=P(i_1=q_i)</script><script type="math/tex; mode=display">
+\Pi=\begin{bmatrix}\pi(i)\end{bmatrix}_N</script><p><strong>三个问题</strong></p>
+<ol>
+<li>评估观察序列概率。即给定模型$\lambda=(A,B,\Pi)$和观测序列$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$，计算在模型$\lambda$下观测序列$O$出现的概率$P(O|\lambda)$。这个问题的求解需要用到前向后向算法。这个问题是HMM模型三个问题中最简单的。</li>
+<li>模型参数学习问题。即给定观测序列$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$，估计模型$\lambda=(A,B,\Pi)$的参数，使该模型下观测序列的条件概率$P(O|\lambda)$最大。这个问题的求解需要用到基于EM算法的鲍姆-韦尔奇算法。这个问题是HMM模型三个问题中最复杂的。</li>
+<li>预测问题，也称为解码问题。即给定模型$\lambda=(A,B,\Pi)$和观测序列$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$，求给定观测序列条件下，最可能出现的对应的状态序列，这个问题的求解需要用到基于动态规划的维特比算法。这个问题是HMM模型三个问题中复杂度居中的算法。</li>
+</ol>
+<h3 id="评估观察序列概率"><a href="#评估观察序列概率" class="headerlink" title="评估观察序列概率"></a>评估观察序列概率</h3><p><strong>暴力求解</strong></p>
+<script type="math/tex; mode=display">
+P(O|\lambda)=\sum_IP(O,I|\lambda)=\sum_{i_1,i_2,\ldots,i_T}\pi_{i_1}b_{i_1}(o_1)a_{i_1 i_2}b_{i_2}(o_2)\ldots a_{i_{T-1} i_T}b_{i_T}(o_T)</script><p><strong>前后向算法求解</strong></p>
+<p>$\alpha_T(i)$表示在时刻$T$观测序列为$o_1,o_2,\ldots,o_T$，并且时刻$T$隐藏状态$q_i$的概率</p>
+<script type="math/tex; mode=display">
+\alpha_{t+1}(i)=\Big[\sum_{j=1}^N\alpha_t(j)a_{ji}\Big]b_i(o_{t+1}),i=1,2,\ldots,N</script><p><img src="img\hmm1.png" alt="hmm1"></p>
+<p>$\beta_t(i)$表示在时刻$t+1$到最后时刻$T$观测序列为$o_{t+1},o_{t+2},\ldots,o_T$，并且时刻$t$隐藏状态$q_i$的概率</p>
+<script type="math/tex; mode=display">
+\beta_{t}(i)=\sum_{j=1}^Na_{ij}b_j(o_{t+1})\beta_{t+1}(j),i=1,2,\ldots,N</script><p><img src="img\hmm2.png" alt="hmm2"></p>
+<p><strong>常用概率计算</strong></p>
+<ol>
+<li>给定模型$\lambda$和观测序列$O$,在时刻$t$处于状态$q_i$的概率记为：</li>
+</ol>
+<script type="math/tex; mode=display">
+\gamma_t(i)=P(i_t=q_i|O,\lambda)=\frac{P(i_t=q_i,O|\lambda)}{P(O|\lambda)}=\frac{\alpha_t(i)\beta_t(i)}{\sum_{j=1}^N\alpha_t(j)\beta_t(j)}</script><ol>
+<li>给定模型$\lambda$和观测序列$O$,在时刻$t$处于状态$q_i$，且时刻$t+1$处于状态$q_j$的概率记为：</li>
+</ol>
+<script type="math/tex; mode=display">
+\xi_t(i,j)=P(i_t=q_i,i_{t+1}=q_j|O,\lambda)=\frac{P(i_t=q_i,i_{t+1}=q_j,O|\lambda)}{P(O|\lambda)}=\frac{\alpha_t(i)a_{ij}b_j(o_{t+1})\beta_{t+1}(j)}{\sum_{r=1}^N\sum_{s=1}^N\alpha_t(r)a_{rs}b_s(o_{t+1})\beta_{t+1}(s)}</script><ol>
+<li><p>将$\gamma_t(i)$和$\xi_t(i,j)$在各个时刻$t$求和，可以得到： </p>
+<p>在观测序列$O$下状态$i$出现的期望值$\sum_{t=1}^T\gamma_t(i)$</p>
+<p>在观测序列$O$下由状态$i$转移的期望值$\sum_{t=1}^{T-1}\gamma_t(i)$</p>
+<p>在观测序列$O$下由状态$i$转移到状态$j$的期望值$\sum_{t=1}^{T−1}\xi_t(i,j)$</p>
+</li>
+</ol>
+<h3 id="模型参数学习问题"><a href="#模型参数学习问题" class="headerlink" title="模型参数学习问题"></a>模型参数学习问题</h3><p><strong>已知隐藏状态序列</strong></p>
+<p>用最大似然求解</p>
+<p>假设样本从隐藏状态$q_i$转移到$q_j$的频率计数是$A_{ij}$,那么状态转移矩阵求得为：</p>
+<script type="math/tex; mode=display">
+A=\begin{bmatrix}a_{ij}\end{bmatrix}，其中a_{ij}=\frac{A_{ij}}{\sum_{s=1}^NA_{is}}</script><p>假设样本隐藏状态为$q_j$且观测状态为$v_k$的频率计数是$B_{jk}$,那么观测状态概率矩阵为： </p>
+<script type="math/tex; mode=display">
+B=\begin{bmatrix}b_j(k)\end{bmatrix}，其中b_j(k)=\frac{B_{jk}}{\sum_{s=1}^MB_{js}}</script><p>假设所有样本中初始隐藏状态为$q_i$的频率计数为$C(i)$，那么初始概率分布为：</p>
+<script type="math/tex; mode=display">
+\Pi=\pi(i)=\frac{C(i)}{\sum_{s=1}^NC(s)}</script><p><strong>未知隐藏状态序列</strong></p>
+<p>用鲍姆-韦尔奇算法，即EM算法 </p>
+<p>E步</p>
+<script type="math/tex; mode=display">
+L(\lambda,\overline\lambda)=\sum_IP(I|O,\overline\lambda)\log P(O,I|\lambda)</script><p>M步</p>
+<script type="math/tex; mode=display">
+\overline\lambda=arg\max_\lambda\sum_IP(I|O,\overline\lambda)\log P(O,I|\lambda)</script><p>由$P(I|O,\overline\lambda)\propto P(O,I|\overline\lambda)$和$\sum_{i=1}^N\pi_i=1$，通过拉格朗日乘子法，再通过上节的常用概率计算，推导出：</p>
+<script type="math/tex; mode=display">
+\pi_i=\frac{\sum_{d=1}^D\gamma_1^{(d)}(i)}{D}</script><script type="math/tex; mode=display">
+a_{ij}=\frac{\sum_{d=1}^D\sum_{t=1}^{T-1}\xi_t^{(d)}(i,j)}{\sum_{d=1}^D\sum_{t=1}^{T-1}\gamma_t^{(d)}(i)}</script><script type="math/tex; mode=display">
+b_j(k)=\frac{\sum_{d=1}^D\sum_{t=1,o_t^{(d)}=v_k}^T\gamma_t^{(d)}(j)}{\sum_{d=1}^D\sum_{t=1}^T\gamma_t^{(d)}(j)}</script><h3 id="预测问题"><a href="#预测问题" class="headerlink" title="预测问题"></a>预测问题</h3><p>对可能出现的对应的状态序列$I^∗=\lbrace i^∗_1,i^∗_2,\ldots,i^∗_T\rbrace$，用维特比算法近似$P(I^*|O)$</p>
+<p>第一个局部状态是在时刻$t$隐藏状态为$i$所有可能的状态转移路径$i_1,i_2,\ldots,i_t$中的概率最大值。记为$\delta t(i)$: </p>
+<script type="math/tex; mode=display">
+\delta_t(t)=\max_{i_1,i_2,\ldots,i_{t-1}}P(i_t=i,i_1,i_2,\ldots,o_t,o_{t-1},\ldots,o_1|\lambda)，i=1,2,\ldots,N</script><script type="math/tex; mode=display">
+\delta_{t+1}(i)=\max_{1\le j\le N}\begin{bmatrix}\delta_t(j)a_{ji}\end{bmatrix}b_i(o_{t+1})</script><p>第二个局部状态由第一个局部状态递推得到。我们定义在时刻$t$隐藏状态为$i$的所有单个状态转移路径$(i_1,i_2,\ldots,i_{t−1},i)$中概率最大的转移路径中第$t−1$个节点的隐藏状态为$\psi_t(i)$，其递推表达式可以表示为： </p>
+<script type="math/tex; mode=display">
+\Psi_t(i)=arg\max_{1\le j\le N}\begin{bmatrix}\delta_{t-1}(j)a_{ji}\end{bmatrix}</script><p>有了这两个局部状态，我们就可以从时刻0一直递推到时刻$T$，然后利用$\psi_t(i)$记录的前一个最可能的状态节点回溯，直到找到最优的隐藏状态序列。 </p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><h3 id="前后向算法"><a href="#前后向算法" class="headerlink" title="前后向算法"></a>前后向算法</h3><p><strong>前向算法</strong></p>
+<p>输入：HMM模型$\lambda=(A,B,\Pi)$，观测序列$O=(o_1,o_2,\ldots,o_T)$</p>
+<p>输出：观测序列概率$P(O|\lambda)$</p>
+<ol>
+<li>计算时刻1的各个隐藏状态前向概率：</li>
+</ol>
+<script type="math/tex; mode=display">
+\alpha_1(i)=\pi_ib_i(o_1)，i=1,2,\ldots,N</script><ol>
+<li>递推时刻$2,3,\ldots,T$时刻的前向概率：</li>
+</ol>
+<script type="math/tex; mode=display">
+\alpha_{t+1}(i)=\begin{bmatrix}\sum_{j=1}^N\alpha_t(j)a_{ji}\end{bmatrix}b_i(o_{t+1})，i=1,2,\ldots,N</script><ol>
+<li>计算最终结果：</li>
+</ol>
+<script type="math/tex; mode=display">
+P(O|\lambda)=\sum_{i=1}^N\alpha_T(i)</script><p><strong>后向算法</strong></p>
+<p>输入：HMM模型$\lambda=(A,B,\Pi)$，观测序列$O=(o_1,o_2,\ldots,o_T)$</p>
+<p>输出：观测序列概率$P(O|\lambda)$</p>
+<ol>
+<li>初始化时刻$T$的各个隐藏状态后向概率：</li>
+</ol>
+<script type="math/tex; mode=display">
+\beta_T(i)=1,i=1,2,\ldots,N</script><ol>
+<li>递推时刻$T−1,T−2,\ldots,1$时刻的后向概率：</li>
+</ol>
+<script type="math/tex; mode=display">
+\beta_{t}(i)=\sum_{j=1}^Na_{ij}b_j(o_{t+1})\beta_{t+1}(j),i=1,2,\ldots,N</script><ol>
+<li>计算最终结果：</li>
+</ol>
+<script type="math/tex; mode=display">
+P(O|\lambda)=\sum_{i=1}^N\pi_ib_i(o_1)\beta_1(i)</script><h3 id="鲍姆-韦尔奇算法"><a href="#鲍姆-韦尔奇算法" class="headerlink" title="鲍姆-韦尔奇算法"></a>鲍姆-韦尔奇算法</h3><p>输入： $D$个观测序列样本$\lbrace (O_1),(O_2),\ldots,(O_D)\rbrace$</p>
+<p>输出：HMM模型参数</p>
+<ol>
+<li><p>随机初始化所有的$\pi_i,a_{ij},b_j(k)$</p>
+</li>
+<li><p>对于每个样本$d=1,2,\ldots,D$，用前向后向算法计算$\gamma^{(d)}_t(i)，\xi^{(d)}_t(i,j)，t=1,2,\ldots,T$</p>
+</li>
+<li><p>更新模型参数：</p>
+</li>
+</ol>
+<script type="math/tex; mode=display">
+\pi_i=\frac{\sum_{d=1}^D\gamma_1^{(d)}(i)}{D}</script><script type="math/tex; mode=display">
+a_{ij}=\frac{\sum_{d=1}^D\sum_{t=1}^{T-1}\xi_t^{(d)}(i,j)}{\sum_{d=1}^D\sum_{t=1}^{T-1}\gamma_t^{(d)}(i)}</script><script type="math/tex; mode=display">
+b_j(k)=\frac{\sum_{d=1}^D\sum_{t=1,o_t^{(d)}=v_k}^T\gamma_t^{(d)}(j)}{\sum_{d=1}^D\sum_{t=1}^T\gamma_t^{(d)}(j)}</script><ol>
+<li>如果$\pi_i,a_{ij},b_j(k)$的值已经收敛，则算法结束，否则回到第2步继续迭代。</li>
+</ol>
+<h3 id="维特比算法"><a href="#维特比算法" class="headerlink" title="维特比算法"></a>维特比算法</h3><p>输入：HMM模型$\lambda=(A,B,\Pi)$，观测序列$O=(o_1,o_2,\ldots,o_T)$</p>
+<p>输出：最有可能的隐藏状态序列$I^<em>=\lbrace i^</em>_1,i^<em>_2,\ldots,i^</em>_T\rbrace$</p>
+<ol>
+<li>初始化局部状态：</li>
+</ol>
+<script type="math/tex; mode=display">
+\delta_1(i)=\pi_ib_i(o_1)，i=1,2,\ldots,N</script><script type="math/tex; mode=display">
+\Psi_t(i)=0，i=1,2,\ldots,N</script><ol>
+<li>进行动态规划递推时刻$t=2,3,\ldots,T$时刻的局部状态：</li>
+</ol>
+<script type="math/tex; mode=display">
+\delta_t(i)=\max_{1\le j\le N}\begin{bmatrix}\delta_{t-1}(j)a_{ji}\end{bmatrix}b_i(o_t)</script><script type="math/tex; mode=display">
+\Psi_t(i)=arg\max_{1\le j\le N}\begin{bmatrix}\delta_{t-1}(j)a_{ji}\end{bmatrix}</script><ol>
+<li>计算时刻$T$最大的$\delta_T(i)$，即为最可能隐藏状态序列出现的概率。计算时刻$T$最大的$\Psi_t(i)$，即为时刻$T$最可能的隐藏状态。</li>
+</ol>
+<script type="math/tex; mode=display">
+P^*=\max_{1\le j\le N}\delta_T(i)</script><script type="math/tex; mode=display">
+i^*_T=arg\max_{1\le j\le N}\begin{bmatrix}\delta_T(i)\end{bmatrix}</script><ol>
+<li>利用局部状态$\Psi(i)$开始回溯。对于$t=T−1,T−2,…,1$：</li>
+</ol>
+<script type="math/tex; mode=display">
+i^*_T=\Psi_{t+1}(i^*_{t+1})</script><p>最终得到最有可能的隐藏状态序列$I^<em>=\lbrace i^</em>_1,i^<em>_2,\ldots,i^</em>_T\rbrace$</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/" rel="prev" title="NLP-08-文本主题模型LDA">
+      <i class="fa fa-chevron-left"></i> NLP-08-文本主题模型LDA
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-10-%E6%9D%A1%E4%BB%B6%E9%9A%8F%E6%9C%BA%E5%9C%BACRF/" rel="next" title="NLP-10-条件随机场CRF">
+      NLP-10-条件随机场CRF <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">模型原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%84%E4%BC%B0%E8%A7%82%E5%AF%9F%E5%BA%8F%E5%88%97%E6%A6%82%E7%8E%87"><span class="nav-number">1.1.</span> <span class="nav-text">评估观察序列概率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8F%82%E6%95%B0%E5%AD%A6%E4%B9%A0%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.</span> <span class="nav-text">模型参数学习问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%84%E6%B5%8B%E9%97%AE%E9%A2%98"><span class="nav-number">1.3.</span> <span class="nav-text">预测问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E5%90%8E%E5%90%91%E7%AE%97%E6%B3%95"><span class="nav-number">2.1.</span> <span class="nav-text">前后向算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%B2%8D%E5%A7%86-%E9%9F%A6%E5%B0%94%E5%A5%87%E7%AE%97%E6%B3%95"><span class="nav-number">2.2.</span> <span class="nav-text">鲍姆-韦尔奇算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%B4%E7%89%B9%E6%AF%94%E7%AE%97%E6%B3%95"><span class="nav-number">2.3.</span> <span class="nav-text">维特比算法</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sholic</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sholic</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

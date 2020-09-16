@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="模型原理pLSA与LDA差别及要点 pLSA是频率学派的，LDA是贝叶斯学派的，LDA为pLSA的两个参数$p(\omega|z)$和$p(z|d)$加了先验分布，即Dirichlet分布。 pLSA跟LDA的本质区别就在于它们去估计未知参数所采用的思想不同。前者是EM算法，通过$\phi_{k,j}$和$\theta_{i,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过最大">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-08-文本主题模型LDA">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/index.html">
+<meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="模型原理pLSA与LDA差别及要点 pLSA是频率学派的，LDA是贝叶斯学派的，LDA为pLSA的两个参数$p(\omega|z)$和$p(z|d)$加了先验分布，即Dirichlet分布。 pLSA跟LDA的本质区别就在于它们去估计未知参数所采用的思想不同。前者是EM算法，通过$\phi_{k,j}$和$\theta_{i,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过最大">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/img/LDA1.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/img/LDA2.png">
+<meta property="article:published_time" content="2020-09-16T01:39:51.000Z">
+<meta property="article:modified_time" content="2020-09-16T01:47:53.938Z">
+<meta property="article:author" content="sholic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/img/LDA1.png">
+
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>NLP-08-文本主题模型LDA | SHolic的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">SHolic的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-08-文本主题模型LDA
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 09:39:51 / 修改时间：09:47:53" itemprop="dateCreated datePublished" datetime="2020-09-16T09:39:51+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="pLSA与LDA差别及要点"><a href="#pLSA与LDA差别及要点" class="headerlink" title="pLSA与LDA差别及要点"></a>pLSA与LDA差别及要点</h3><ul>
+<li>pLSA是频率学派的，LDA是贝叶斯学派的，LDA为pLSA的两个参数$p(\omega|z)$和$p(z|d)$加了先验分布，即Dirichlet分布。</li>
+<li>pLSA跟LDA的本质区别就在于它们去估计未知参数所采用的思想不同。前者是EM算法，通过$\phi_{k,j}$和$\theta_{i,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过最大化对数似然函数更新。后者是Gibbs采样，用条件分布的的抽样近似联合分布。</li>
+<li><p>最大后验MAP是由贝叶斯估计推导而来，比最大似然多乘了参数分布。</p>
+</li>
+<li><p>LDA假设文章之间是独立的，词之间是独立的，是词袋模型。</p>
+</li>
+</ul>
+<h3 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h3><p>gamma函数是阶乘在实数上的推广</p>
+<script type="math/tex; mode=display">
+\Gamma(x) = \int_0^\infty t^{x-1}e^{-t}dt</script><script type="math/tex; mode=display">
+\Gamma(x+1) = x\Gamma(x)</script><script type="math/tex; mode=display">
+\Gamma(n)=(n-1)!</script><p>多项分布是二项分布拓展到多维的情况</p>
+<script type="math/tex; mode=display">
+Binom(k|n,p)=\binom{n}{k}p^k(1-p)^{n-k}</script><script type="math/tex; mode=display">
+Multi(\vec{m}|n,\vec{p})=\frac{n!}{m_1!\ldots{m_k!}}p_1^{m_1}\ldots{p_k^{m_k}}</script><p>Beta分布和Dirichlet分布是概率的概率分布，是概率密度函数。</p>
+<p>Dirichlet分布是Beta分布拓展到多维的情况。</p>
+<script type="math/tex; mode=display">
+Beta(p|\alpha,\beta)=\frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)}p^{\alpha-1}(1-p)^{\beta-1}</script><script type="math/tex; mode=display">
+Dirichlet(\vec{p}|\vec{\alpha})=\frac{\Gamma(\sum_{i=1}^k{\alpha^i})}{\prod_{i=1}^k{\Gamma(\alpha^i)}}\prod_{i=1}^{k}p_i^{\alpha^i-1}</script><p>Beta分布和Dirichlet分布的数学期望</p>
+<script type="math/tex; mode=display">
+E(Beta(p|\alpha,\beta))=\frac{\alpha}{\alpha+\beta}</script><script type="math/tex; mode=display">
+E(Dirichlet(\vec{p}|\vec{\alpha}))=(\frac{\alpha_1}{\sum_{k=1}^K\alpha_k},\frac{\alpha_2}{\sum_{k=1}^K\alpha_k},\ldots,\frac{\alpha_K}{\sum_{k=1}^K\alpha_k})</script><p>Beta分布是二项分布的共轭先验分布；Dirichlet分布是多项分布的共轭先验分布</p>
+<script type="math/tex; mode=display">
+Beta(p|\alpha,\beta)+BinomCount(k,n-k)=Beta(p|\alpha+k,\beta+n-k)</script><script type="math/tex; mode=display">
+Dirichlet(\vec{p}|\vec{\alpha})+MultiCount(\vec{m})=Dirichlet(\vec{p}|\vec{\alpha}+\vec{m})</script><h3 id="文档生成"><a href="#文档生成" class="headerlink" title="文档生成"></a>文档生成</h3><p>M篇语料$d_m\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。</p>
+<ol>
+<li>按照概率$P(d_m)$选择一篇文档$d_m$</li>
+<li>选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_m)$（分布$\theta$由参数$\beta$决定）选择一个隐含主题类别$z_k$</li>
+<li>选定$z_k$后，从词分布中按照概率$P(w_j|z_k)$（分布$\phi$由参数$\alpha$决定）选择一个词$w_j$</li>
+</ol>
+<p>如下图：</p>
+<p><img src="img\LDA1.png" alt="LDA1"></p>
+<h3 id="训练方法"><a href="#训练方法" class="headerlink" title="训练方法"></a>训练方法</h3><h4 id="Gibbs采样"><a href="#Gibbs采样" class="headerlink" title="Gibbs采样"></a>Gibbs采样</h4><p>在Unigram条件下，也就是不存在隐参数$z$的情况下：</p>
+<script type="math/tex; mode=display">
+p(\vec w|\vec\alpha)=\int p(\vec w|\vec p)p(\vec p|\vec\alpha)d\vec p=\frac{\Delta(\vec n+\vec\alpha)}{\Delta(\vec\alpha)}</script><p>其中，</p>
+<script type="math/tex; mode=display">
+\Delta(\vec\alpha)=\displaystyle\int\prod_{k=1}^Vp_k^{\alpha_k-1}d\vec p=\frac{\prod_{i=1}^k{\Gamma(\alpha^i)}}{\Gamma(\sum_{i=1}^k{\alpha^i})}</script><p>在LDA中，文档的生成概率：</p>
+<script type="math/tex; mode=display">
+p(\vec w,\vec z|\vec\alpha,\vec\beta)=p(\vec w|\vec z,\vec\beta)p(\vec z|\vec\alpha)=\prod_{k=1}^K\frac{\Delta(\vec\phi_k+\vec\beta)}{\Delta(\vec\beta)}\prod_{m=1}^M\frac{\Delta(\vec\theta_m+\vec\alpha)}{\Delta(\vec\alpha)}</script><p>通过上式推导Gibbs采样需要的条件概率：</p>
+<p>令$i=(m,n)$是一个二维下标，对应于第m篇文档的第n个词，每个词 $w_i$ 的频率为$n_i$ </p>
+<p>由：</p>
+<script type="math/tex; mode=display">
+p(\vec \theta_m|\vec z_{\neg i},\vec w_{\neg i})=Dir(\vec\theta_m|\vec n_{m,\neg i}+\vec\alpha)</script><script type="math/tex; mode=display">
+p(\vec \phi_k|\vec z_{\neg i},\vec w_{\neg i})=Dir(\vec\phi_k|\vec n_{k,\neg i}+\vec\beta)</script><p>得：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+p(z_i=k|\vec w,\vec z_{\neg i})&\propto p(z_i=k,w_i=t|\vec w_{\neg i},\vec z_{\neg i})\\
+&=\int p(z_i=k,w_i=t,\vec\theta_m,\vec\phi_k|\vec z_{\neg i},\vec w_{\neg i})d\vec\theta_md\vec\phi_k\\
+&=\int p(z_i=k,\vec\theta_m|\vec z_{\neg i},\vec w_{\neg i})\cdot p(w_i=t,\vec\phi_k|\vec z_{\neg i},\vec w_{\neg i})d\vec\theta_md\vec\phi_k\\
+&=\int p(z_i=k|\vec\theta_m)p(\vec\theta_m|\vec z_{\neg i},\vec w_{\neg i})\cdot p(w_i=t|\vec\phi_k)p(\vec\phi_k|\vec z_{\neg i},\vec w_{\neg i})d\vec\theta_md\vec\phi_k\\
+&=\int\theta_{mk}Dir(\vec\theta_m|\vec n_{m,\neg i}+\vec\alpha)\cdot\int\phi_{kt}Dir(\vec\phi_k|\vec n_{k,\neg i}+\vec\beta)\\
+&=\hat\theta_{m,k}\cdot\hat\phi_{k,t}\\
+&=\frac{n_{m,\neg i}^k+\alpha_k}{\sum_{k=1}^K(n_{m,\neg i}^k+\alpha_k)}\cdot\frac{n_{k,\neg i}^t+\beta_t}{\sum_{t=1}^V(n_{k,\neg i}^t+\beta_t)}
+\end{align}</script><h4 id="变分推断"><a href="#变分推断" class="headerlink" title="变分推断"></a>变分推断</h4><p>变分推断一般用指数分布族$q$来近似复杂分布$p(z)$，z为隐参数。</p>
+<p>指数分布族满族满足</p>
+<script type="math/tex; mode=display">
+p(x|\theta)=h(x)\exp(\eta(\theta)*T(x)-A(\theta))</script><p>$A(\theta)$为归一化因子，那么</p>
+<script type="math/tex; mode=display">
+\frac{d}{d\eta(\theta)}A(\theta)=E_{p(x|\theta)}[T(x)]</script><p>可以把期望转化成求导。</p>
+<p>LDA的变分推断用$q(\theta,\phi,z|\gamma,\lambda,\eta)$来估计$p(\theta,\phi,z|\alpha,\beta,\omega)$，如下图：</p>
+<p><img src="img\LDA2.png" alt="LDA2"></p>
+<p>图二把图一解耦了，用数学语言来表示</p>
+<script type="math/tex; mode=display">
+q(\theta,\phi,z|\gamma,\lambda,\eta)=\prod_{k=1}^Kq(\phi_k|\lambda_k)\prod_{d=1}^M(q(\theta_d|\gamma_d)\prod_{n=1}^Nq(z|\eta))</script><p>参数估计需要两步，第一步通过极大化ELBO估计$(\gamma,\lambda,\eta)$，然后用EM算法求解$(\alpha,\beta)$。</p>
+<p><strong>ELBO</strong></p>
+<p>ELBO就是第一张图的期望减去第二张图的期望</p>
+<script type="math/tex; mode=display">
+\begin{align}
+L(\gamma,\lambda,\eta;\alpha,\beta)&=E_q\log p(\theta,\phi,z,w|\alpha,\beta)-E_q\log q(\theta,\phi,z|\gamma,\lambda,\eta)\\
+&=\begin{matrix}\underbrace{(E_q[\log p(\phi|\beta)]+E_q[\log p(z|\theta)]+E_q[\log p(\theta|\alpha)]+E_q[\log p(w|z,\phi)])}\\图一\end{matrix}\\
+&-\begin{matrix}\underbrace{(E_q[\log q(\phi|\lambda)]+E_q[\log q(z|\eta)]+E_q[\log q(\theta|\gamma)])}\\图二\end{matrix}
+\end{align}</script><p><strong>EM算法求解</strong></p>
+<p>E步</p>
+<p>对上面7项展开（用到了指数分布族性质），对各隐参数$(\gamma,\lambda,\eta)$求偏导等于零，算出最优隐参数表达式$(\gamma,\lambda,\eta)$并迭代</p>
+<script type="math/tex; mode=display">
+\eta_{nk}\propto\exp(\sum_{i=1}^Vw_n^i(\Psi(\lambda_{ki})-\Psi(\sum_{i'=1}^V\lambda_{ki'}))+\Psi(\gamma_k)-\Psi(\sum_{k'=1}^K\gamma_{k'}))</script><p>其中，</p>
+<script type="math/tex; mode=display">
+\Psi(x)=\frac{d}{dx}\log\Gamma(x)=\frac{\Gamma'(x)}{\Gamma(x)}</script><p>，$w_n^i=1$当且仅当文档中第$n$个词为词汇表中第$i$个词</p>
+<script type="math/tex; mode=display">
+\gamma_k=\alpha_k+\sum_{n=1}^N\eta_{nk}</script><script type="math/tex; mode=display">
+\lambda_{ki}=\beta_i+\sum_{d=1}^M\sum_{n=1}^{N_d}\eta_{dnk}w_{dn}^i</script><p>M步</p>
+<p>极大化ELBO，并用牛顿法求解$(\alpha,\beta)$</p>
+<script type="math/tex; mode=display">
+\alpha_k=\alpha_k+\frac{\nabla_{\alpha_k}L}{\nabla_{\alpha_k\alpha_j}L}</script><script type="math/tex; mode=display">
+\beta_i=\beta_i+\frac{\nabla_{\beta_i}L}{\nabla_{\beta_i\beta_j}L}</script><p>其中，</p>
+<script type="math/tex; mode=display">
+\nabla_{\alpha_k}L=M(\Psi(\sum_{k'=1}^K\alpha_{k'})-\Psi(\alpha_k))+\sum_{d=1}^M(\Psi(\gamma_{dk})-\Psi(\sum_{k'=1}^K\gamma_{dk'}))</script><script type="math/tex; mode=display">
+\nabla_{\alpha_k\alpha_j}L=M(\Psi'(\sum_{k'=1}^K\alpha_{k'})-\delta(k,j)\Psi'(\alpha_k))</script><p>再其中，当且仅当$k=j$时，$\delta(k,j)=1$，否则$\delta(k,j)=0$。</p>
+<script type="math/tex; mode=display">
+\nabla_{\beta_i}L=K(\Psi(\sum_{i'=1}^V\beta_{i'})-\Psi(\beta_i))+\sum_{k=1}^K(\Psi(\lambda_{ki})-\Psi(\sum_{i'=1}^V\lambda_{ki'}))</script><script type="math/tex; mode=display">
+\nabla_{\beta_i\beta_j}L=K(\Psi'(\sum_{i'=1}^V\beta_{i'})-\delta(i,j)\Psi'(\beta_i))</script><p>再其中，当且仅当$i=j$时，$\delta(i,j)=1$，否则$\delta(i,j)=0$。</p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><h3 id="Gibbs采样-1"><a href="#Gibbs采样-1" class="headerlink" title="Gibbs采样"></a>Gibbs采样</h3><ol>
+<li>随机给每一篇文档的每一个词$w$，随机分配主题编号$z$</li>
+<li>统计每个主题$z_i$下出现字$w$数量，以及每个文档$d$中出主题$z_i$中的词$w$的数量</li>
+<li>每次排除当前词$w$的主题分布$z_i$，根据其他所有词的主题分类，来估计当前词$\omega$分配到各个主题$z_1,z_2,\ldots,z_k$的概率，即计算$p(z_i|z_{\neg i},d,w)$(Gibbs updating rule)。得到当前词属于所有主题$z_1,z_2,\ldots,z_k$的概率分布后，重新为词采样一个新的主题$z_1$。用同样的方法不断更新的下一个词的主题，直到每个文档下的主题分布$\theta_n$和每个主题下的词分布$\phi_k$收敛。</li>
+<li>最后输出待估计参数，$\theta_n$和$\phi_k$，每个单词的主题$z_{n,k}$也可以得到。</li>
+</ol>
+<h3 id="变分推断-1"><a href="#变分推断-1" class="headerlink" title="变分推断"></a>变分推断</h3><p>输入：主题数$K$，$M$个文档与对应的词。</p>
+<ol>
+<li><p>初始化$\alpha,\beta$向量。</p>
+</li>
+<li><p>开始EM算法迭代循环直到收敛。</p>
+<ol>
+<li><p>初始化所有的$\gamma,\lambda,\eta$，进行LDA的E步迭代循环,直到$\gamma,\lambda,\eta$收敛。</p>
+<ol>
+<li><p>for d from 1 to M:</p>
+<p>​    for n from 1 to $N_d$:</p>
+<p>​        for k from 1 to K:</p>
+<p>​            更新$\eta_{dnk}$</p>
+<p>​    标准化$\eta_{nk}$使该向量各项的和为1.</p>
+<p>更新$\gamma_{dk}$。</p>
+</li>
+<li><p>for k from 1 to K:</p>
+<p>​    for i from 1 to V:</p>
+<p>​        更新$\lambda_{ki}$。</p>
+</li>
+<li><p>如果$\gamma,\lambda,\eta$均已收敛，则跳出循环。</p>
+</li>
+</ol>
+</li>
+<li><p>进行LDA的M步迭代循环， 直到$\alpha,\beta$收敛</p>
+<ol>
+<li>用牛顿法迭代更新$\alpha,\beta$直到收敛</li>
+</ol>
+</li>
+<li><p>如果所有的参数均收敛，则算法结束，否则回到EM步。</p>
+</li>
+</ol>
+</li>
+</ol>
+<p>算法结束后，我们可以得到模型的后验参数$\alpha,\beta$，以及我们需要的近似模型主题词分布$\lambda$，以及近似训练文档主题分布$\gamma$。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-07-%E5%8F%98%E5%88%86%E6%8E%A8%E6%96%AD/" rel="prev" title="NLP-07-变分推断">
+      <i class="fa fa-chevron-left"></i> NLP-07-变分推断
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/" rel="next" title="NLP-09-隐式马尔科夫链HMM">
+      NLP-09-隐式马尔科夫链HMM <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">模型原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pLSA%E4%B8%8ELDA%E5%B7%AE%E5%88%AB%E5%8F%8A%E8%A6%81%E7%82%B9"><span class="nav-number">1.1.</span> <span class="nav-text">pLSA与LDA差别及要点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%84%E5%A4%87%E7%9F%A5%E8%AF%86"><span class="nav-number">1.2.</span> <span class="nav-text">预备知识</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E6%A1%A3%E7%94%9F%E6%88%90"><span class="nav-number">1.3.</span> <span class="nav-text">文档生成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E6%96%B9%E6%B3%95"><span class="nav-number">1.4.</span> <span class="nav-text">训练方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Gibbs%E9%87%87%E6%A0%B7"><span class="nav-number">1.4.1.</span> <span class="nav-text">Gibbs采样</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%98%E5%88%86%E6%8E%A8%E6%96%AD"><span class="nav-number">1.4.2.</span> <span class="nav-text">变分推断</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Gibbs%E9%87%87%E6%A0%B7-1"><span class="nav-number">2.1.</span> <span class="nav-text">Gibbs采样</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%98%E5%88%86%E6%8E%A8%E6%96%AD-1"><span class="nav-number">2.2.</span> <span class="nav-text">变分推断</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sholic</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sholic</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

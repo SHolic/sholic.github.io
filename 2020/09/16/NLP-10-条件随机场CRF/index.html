@@ -20,21 +20,21 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="模型原理文档生成M篇语料$d_i\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。  按照概率$P(d_i)$选择一篇文档$d_i$ 选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_i)$（参数$\theta$）选择一个隐含主题类别$">
+  <meta name="description" content="模型原理CRF与HMM区别   HMM不知道隐藏状态，CRF知道隐藏状态  HMM隐藏状态只依赖前一个隐藏状态，CRF隐藏状态可以依赖上下文（Ngram），linear_CRF依赖前一个隐藏状态  HMM的隐藏状态转移概率是规范化的（和等于1），CRF隐藏状态转移概率是非规范化的（权重乘以1或0）  HMM是生成模型（未知隐藏状态），求解联合分布$P(x,y)$，CRF是判别模型（已知隐藏状态），">
 <meta property="og:type" content="article">
-<meta property="og:title" content="NLP-5-概率潜在语义分析pLSA">
-<meta property="og:url" content="http://example.com/2020/09/15/NLP-5-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/index.html">
+<meta property="og:title" content="NLP-10-条件随机场CRF">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-10-%E6%9D%A1%E4%BB%B6%E9%9A%8F%E6%9C%BA%E5%9C%BACRF/index.html">
 <meta property="og:site_name" content="SHolic的博客">
-<meta property="og:description" content="模型原理文档生成M篇语料$d_i\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。  按照概率$P(d_i)$选择一篇文档$d_i$ 选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_i)$（参数$\theta$）选择一个隐含主题类别$">
+<meta property="og:description" content="模型原理CRF与HMM区别   HMM不知道隐藏状态，CRF知道隐藏状态  HMM隐藏状态只依赖前一个隐藏状态，CRF隐藏状态可以依赖上下文（Ngram），linear_CRF依赖前一个隐藏状态  HMM的隐藏状态转移概率是规范化的（和等于1），CRF隐藏状态转移概率是非规范化的（权重乘以1或0）  HMM是生成模型（未知隐藏状态），求解联合分布$P(x,y)$，CRF是判别模型（已知隐藏状态），">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/2020/09/15/NLP-5-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/img/pLSA.png">
-<meta property="article:published_time" content="2020-09-15T11:19:23.000Z">
-<meta property="article:modified_time" content="2020-09-16T01:27:58.026Z">
+<meta property="og:image" content="e:/笔记整理/NLPsummary/images/crf1.jpg">
+<meta property="article:published_time" content="2020-09-16T01:44:34.000Z">
+<meta property="article:modified_time" content="2020-09-16T01:45:51.450Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/2020/09/15/NLP-5-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/img/pLSA.png">
+<meta name="twitter:image" content="e:/笔记整理/NLPsummary/images/crf1.jpg">
 
-<link rel="canonical" href="http://example.com/2020/09/15/NLP-5-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/">
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-10-%E6%9D%A1%E4%BB%B6%E9%9A%8F%E6%9C%BA%E5%9C%BACRF/">
 
 
 <script id="page-configurations">
@@ -47,7 +47,7 @@
   };
 </script>
 
-  <title>NLP-5-概率潜在语义分析pLSA | SHolic的博客</title>
+  <title>NLP-10-条件随机场CRF | SHolic的博客</title>
   
 
 
@@ -157,7 +157,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/NLP-5-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-10-%E6%9D%A1%E4%BB%B6%E9%9A%8F%E6%9C%BA%E5%9C%BACRF/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -170,7 +170,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          NLP-5-概率潜在语义分析pLSA
+          NLP-10-条件随机场CRF
         </h1>
 
         <div class="post-meta">
@@ -179,16 +179,10 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
+              
 
-              <time title="创建时间：2020-09-15 19:19:23" itemprop="dateCreated datePublished" datetime="2020-09-15T19:19:23+08:00">2020-09-15</time>
+              <time title="创建时间：2020-09-16 09:44:34 / 修改时间：09:45:51" itemprop="dateCreated datePublished" datetime="2020-09-16T09:44:34+08:00">2020-09-16</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-09-16 09:27:58" itemprop="dateModified" datetime="2020-09-16T09:27:58+08:00">2020-09-16</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -210,58 +204,96 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="文档生成"><a href="#文档生成" class="headerlink" title="文档生成"></a>文档生成</h3><p>M篇语料$d_i\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。</p>
-<ol>
-<li>按照概率$P(d_i)$选择一篇文档$d_i$</li>
-<li>选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_i)$（参数$\theta$）选择一个隐含主题类别$z_k$</li>
-<li>选定$z_k$后，从词分布中按照概率$P(w_j|z_k)$（参数$\phi$）选择一个词$w_j$</li>
-</ol>
-<p>如下图：</p>
-<p><img src="img\pLSA.png" alt="pLSA"></p>
-<p>文档中每个词的生成概率为：</p>
-<script type="math/tex; mode=display">
-P(d_i,w_j)=P(d_i)P(w_j|d_i)=P(d_i)\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)</script><p>令$\phi_{kj}$表示词项$w_j$出现在主题$z_k$中的概率，即</p>
-<script type="math/tex; mode=display">
-P(w_j|z_k)=\phi_{k,j},\sum_{w_j\in\mathcal{V}}\phi_{k,j}=1</script><p>令$\theta_{i,k}$表示主题$z_k$出现在文档$d_i$中的概率，即</p>
-<script type="math/tex; mode=display">
-P(z_k|d_i)=\theta_{i,k},\sum_{z_k\in\mathcal{Z}}\theta_{i,k}=1</script><p>令$\Phi=(\phi_1,\phi_2,\ldots,\phi_K)$为K个主题到词的概率，M篇语料$(d_1,d_2,\ldots,d_M)$中每篇文档$d_i$中，$\Theta=(\theta_1,\theta_2,\ldots,\theta_M)$为M个文档到主题的概率。</p>
-<p>令$n(d_i,w_j)$表示词项$w_j$在文档$d_i$中的词频，$n(d_i)$表示文档$d_i$中词的总数，则有：</p>
-<script type="math/tex; mode=display">
-n(d_i)=\sum_{w_j\in\mathcal{V}}n(d_i,w_j)</script><p>由词与词之间独立，文档与文档之间独立，整个语料词分布为：</p>
-<script type="math/tex; mode=display">
-P(W|D)=\prod_{i=1}^M\prod_{j=1}^NP(d_i,w_j)^{n(d_i,w_j)}</script><p>可以得到对数似然函数：</p>
-<script type="math/tex; mode=display">
-\begin{align}
-\mathcal{L(\Phi,\Theta)}&=\log P(W|D)\\
-&=\sum_{i=1}^M\sum_{j=1}^Nn(d_i,w_j)\log P(d_i,w_j)\\
-&=\sum_{i=1}^M\sum_{j=1}^Nn(d_i,w_j)\left(\log P(d_i)+\log\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)\right)\\
-&=\sum_{i=1}^Mn(d_i)\left(\log P(d_i)+\sum_{j=1}^N\frac{n(d_i,w_j)}{n(d_i)}\log\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)\right)\\
-&=\sum_{i=1}^Mn(d_i)\left(\log P(d_i)+\sum_{j=1}^N\frac{n(d_i,w_j)}{n(d_i)}\log\sum_{k=1}^K\phi_{k,j}\theta_{i,k}\right)
-\end{align}</script><h3 id="EM算法求解"><a href="#EM算法求解" class="headerlink" title="EM算法求解"></a>EM算法求解</h3><p>可以使用EM算法，通过$\phi_{k,j}$和$\theta_{m,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过隐参数更新。</p>
-<p>E步，隐变量的后验分布：</p>
-<script type="math/tex; mode=display">
-P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j}\theta_{i,k}}{\sum_{l=1}^K\phi_{l,j}\theta_{i,l}}</script><p>M步，最大化样本分布的对数似然函数$\mathcal{L}$，第一项与参数无关，去掉 ：</p>
-<script type="math/tex; mode=display">
-\begin{align}
-\mathcal{L}&=\sum_{m=1}^M\sum_{j=1}^Nn(d_i,w_j)\log\sum_{k=1}^K\phi_{k,j}\theta_{i,k}\\
-&=\sum_{m=1}^M\sum_{j=1}^Nn(d_i,w_j)\sum_{k=1}^KP(z_k|d_i,w_j)log[\phi_{k,j}\theta_{i,k}]
-\end{align}</script><p>由$\sum_{j=1}^m\phi_{k,j}=1$和$\sum_{k=1}^K\theta_{i,k}=1$，引入拉格朗日乘子，求偏导</p>
-<p>参数更新公式为：</p>
-<script type="math/tex; mode=display">
-\phi_{k,j}=\frac{\sum_{m=1}^Mn(d_i,w_j)P(z_k|d_i,w_j)}{\sum_{m=1}^N\sum_{i=1}^Mn(d_i,w_m)P(z_k|d_i,w_m)}</script><script type="math/tex; mode=display">
-\theta_{i,k}=\frac{\sum_{j=1}^Nn(d_i,w_j)P(z_k|d_i,w_j)}{n(d_i)}</script><h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><p>输入：单词-文本共现数据</p>
-<p>输出：和。</p>
-<ol>
-<li><p>设置参数和的初始值。</p>
+        <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><p><strong>CRF与HMM区别</strong></p>
+<p><img src="E:\笔记整理\NLPsummary\images\crf1.jpg" alt="crf1"></p>
+<ul>
+<li><p>HMM不知道隐藏状态，CRF知道隐藏状态</p>
 </li>
-<li><p>迭代执行以下E步，M步，直到收敛为止：</p>
-<p>E步：</p>
+<li><p>HMM隐藏状态只依赖前一个隐藏状态，CRF隐藏状态可以依赖上下文（Ngram），linear_CRF依赖前一个隐藏状态</p>
+</li>
+<li><p>HMM的隐藏状态转移概率是规范化的（和等于1），CRF隐藏状态转移概率是非规范化的（权重乘以1或0）</p>
+</li>
+<li><p>HMM是生成模型（未知隐藏状态），求解联合分布$P(x,y)$，CRF是判别模型（已知隐藏状态），求解条件概率$P(y|x)$</p>
+</li>
+</ul>
+<p><strong>CRF定义</strong></p>
+<p>linear_CRF数学定义：</p>
+<p>设$X=(X_1,X_2,\ldots,X_n),Y=(Y_1,Y_2,\ldots,Y_n)$均为线性链表示的随机变量序列，在给定随机变量序列$X$的情况下，随机变量$Y$的条件概率分布$P(Y|X)$构成条件随机场，即满足马尔科夫性：</p>
 <script type="math/tex; mode=display">
-P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j}\theta_{i,k}}{\sum_{l=1}^K\phi_{l,j}\theta_{i,l}}</script><p>M步：</p>
+P(Y_i|X,Y_1,Y_2,\ldots,Y_n)=P(Y_i|X,Y_{i-1},Y_{i+1})</script><p>两类特征 ：</p>
 <script type="math/tex; mode=display">
-\phi_{k,j}=\frac{\sum_{m=1}^Mn(d_i,w_j)P(z_k|d_i,w_j)}{\sum_{m=1}^N\sum_{i=1}^Mn(d_i,w_m)P(z_k|d_i,w_m)}</script><script type="math/tex; mode=display">
-\theta_{i,k}=\frac{\sum_{j=1}^Nn(d_i,w_j)P(z_k|d_i,w_j)}{n(d_i)}</script></li>
+s_l(y_i,x,i),l=1,2,\ldots,L</script><script type="math/tex; mode=display">
+t_k(y_{i-1},y_i,x,i),k=1,2,\ldots,K</script><p>假设$t_k$的权重系数是$\lambda_k$，$s_l$的权重系数是$\mu_l$，此时我们得到了linear-CRF的<strong>参数化形式</strong>如下：</p>
+<script type="math/tex; mode=display">
+P(y|x)=\frac{1}{Z(x)}\exp(\sum_{i,k}\lambda_kt_k(y_{i-1},y_i,x,i)+\sum_{i,l}\mu_ls_l(y_i,x,i))</script><script type="math/tex; mode=display">
+Z(x)=\sum_y\exp(\sum_{i,k}\lambda_kt_k(y_{i-1},y_i,x,i)+\sum_{i,l}\mu_ls_l(y_i,x,i))</script><p>统一特征：</p>
+<script type="math/tex; mode=display">
+f_k(y_{i-1},y_i,x,i)=\begin{cases}t_k(y_{i-1},y_i,x,i)&k=1,2,\ldots,K_1\\s_l(y_i,x,i)&k=K_1+l,l=1,2,\ldots,K_2\end{cases}</script><script type="math/tex; mode=display">
+f_k(y,x)=\sum_{i=1}^nf_k(y_{i-1},y_i,x,i)</script><script type="math/tex; mode=display">
+w_k=\begin{cases}\lambda_k&k=1,2,\ldots,K_1\\\mu_l&k=K_1+l,l=1,2,\ldots,K_2\end{cases}</script><p>这样，我们的linear-CRF的<strong>参数化形式简化</strong>为 ：</p>
+<script type="math/tex; mode=display">
+P(y|x)=\frac{1}{Z(x)}\exp\sum_{k=1}^Kw_kf_k(y,x)</script><script type="math/tex; mode=display">
+Z(x)=\sum_y\exp(\sum_{k=1}^Kw_kf_k(y,x))</script><p>如果将上两式中的$w_k$与$f_k$的用向量表示，即：</p>
+<script type="math/tex; mode=display">
+w=(w_1,w_2,\ldots,w_K)^T\\F(y,x)=(f_1(y,x),f_2(y,x),\ldots,f_K(y,x))^T</script><p>则linear-CRF的参数化形式简化为<strong>内积形式</strong>如下： </p>
+<script type="math/tex; mode=display">
+P_w(y|x)=\frac{\exp(w\cdot F(y,x))}{Z_w(x)}=\frac{\exp(w\cdot F(y,x))}{\sum_y\exp(w\cdot F(y,x))}</script><p>定义一个$m\times m$的矩阵$M$，$m$为$y$所有可能的状态的取值个数。$M$定义如下：</p>
+<script type="math/tex; mode=display">
+M_i(x)=\begin{bmatrix}M_i(y_{i-1},y_i|x)\end{bmatrix}=\begin{bmatrix}\exp(W_i(y_{i-1},y_i|x))\end{bmatrix}=\begin{bmatrix}\exp(\sum_{k=1}^Kw_kf_k(y_{i-1},y_i,x,i))\end{bmatrix}</script><p> 引入起点和终点标记$y_0=start,y_{n+1}=stop$，linear-CRF的参数化形式简化为<strong>矩阵形式</strong>如下：</p>
+<script type="math/tex; mode=display">
+P_w(y|x)=\frac{1}{Z_w(x)}\prod_{i=1}^{n+1}M_i(y_{i-1},y_i|x)</script><p><strong>三个问题</strong></p>
+<p>和HMM一样，同样有三个问题。</p>
+<ul>
+<li>评估——前后向算法</li>
+<li>学习——梯度下降，牛顿法，拟牛顿法</li>
+<li>解码——维特比算法</li>
+</ul>
+<h3 id="评估观测序列概率"><a href="#评估观测序列概率" class="headerlink" title="评估观测序列概率"></a>评估观测序列概率</h3><p>定义$\alpha_i(y_i|x)$表示序列位置$i$的标记是$y_i$时，在位置$i$之前的部分标记序列的非规范化概率。 </p>
+<p>定义$\beta_i(y_i|x)$表示序列位置ii的标记是$y_i$时，在位置$i$之后的从$i+1$到$n$的部分标记序列的非规范化概率。 </p>
+<script type="math/tex; mode=display">
+\alpha_0(y_0|x)=\begin{cases}1&y_0=start\\0&else\end{cases}</script><script type="math/tex; mode=display">
+\beta_{n+1}(y_{n+1}|x)=\begin{cases}1&y_{n+1}=stop\\0&else\end{cases}</script><p>递推公式：</p>
+<script type="math/tex; mode=display">
+\alpha_{i+1}(y_{t+1}|x)=\alpha_i(y_i|x)M_{i+1}(y_{i+1},y_i|x),i=1,2,\ldots,n+1</script><script type="math/tex; mode=display">
+\beta_i(y_i|x)=M_{i+1}(y_i,y_{i+1}|x)\beta_{i+1}(y_{i+1}|x)</script><p>假设我们可能的标记总数是$m$，则$y_i$的取值就有$m$个，我们用$\alpha_i(x),\beta_i(x)$向量形式如下：</p>
+<script type="math/tex; mode=display">
+\alpha_i(x)=(\alpha_i(y_i=1|x),\alpha_i(y_i=2|x),\ldots,\alpha_i(y_i=m|x))^T</script><script type="math/tex; mode=display">
+\beta_i(x)=(\beta_i(y_i=1|x),\beta_i(y_i=2|x),\ldots,\beta_i(y_i=m|x))^T</script><p> 同时用矩阵$M_i(x)$表示由$M_i(y_{i−1},y_i|x)$形成的$m\times m$阶矩阵： </p>
+<script type="math/tex; mode=display">
+M_i(x)=\begin{bmatrix}M_i(y_{i-1},y_i|x)\end{bmatrix}</script><p>递推公式矩阵形式：</p>
+<script type="math/tex; mode=display">
+\alpha_{i+1}^T(x)=\alpha_i^T(x)M_{i+1}(x)</script><script type="math/tex; mode=display">
+\beta_i(x)=M_{i+1}(x)\beta_{i+1}(x)</script><p>概率计算：</p>
+<script type="math/tex; mode=display">
+P(y_i|x)=\frac{\alpha_i^T(y_i|x)\beta_i(y_i|x)}{Z(x)}=\frac{\alpha_i^T(y_i|x)\beta_i(y_i|x)}{\alpha_n^T(x)\cdot\vec 1}</script><script type="math/tex; mode=display">
+P(y_{i-1},y_i|x)=\frac{\alpha_{i-1}^T(y_{i-1}|x)M_i(y_{i-1},y_i|x)\beta_i(y_i|x)}{Z(x)}=\frac{\alpha_{i-1}^T(y_{i-1}|x)M_i(y_{i-1},y_i|x)\beta_i(y_i|x)}{\alpha_n^T(x)\cdot\vec 1}</script><h3 id="模型参数学习问题"><a href="#模型参数学习问题" class="headerlink" title="模型参数学习问题"></a>模型参数学习问题</h3><p>使用梯度下降法求解模型参数</p>
+<p> 一般极大化条件分布$P_w(y|x)$的对数似然函数如下 ：</p>
+<script type="math/tex; mode=display">
+L(w)=\log\prod_{x,y}P_w(y|x)^{\overline P(x,y)}=\sum_{x,y}\overline P(x,y)\log P_w(y|x)</script><script type="math/tex; mode=display">
+f(w)=-L(w)=\sum_x\overline P(x)\log\sum_y\exp\sum_{k=1}^Kw_kf_k(x,y)-\sum_{x,y}\overline P(x,y)\sum_{k=1}^Kw_kf_k(x,y)</script><script type="math/tex; mode=display">
+\frac{\partial f(w)}{\partial w}=\sum_{x,y}\overline P(x)P_w(y|x)f(x,y)-\sum_{x,y}\overline P(x,y)f(x,y)</script><script type="math/tex; mode=display">
+\hat w=w-\alpha\frac{\partial f(w)}{\partial w}</script><h3 id="预测问题"><a href="#预测问题" class="headerlink" title="预测问题"></a>预测问题</h3><p>与HMM类似，用维特比算法求解，在算法中详细讲解</p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><p>输入：模型的$K$个特征函数，和对应的$K$个权重。观测序列$x=(x_1,x_2,\ldots,x_n)$，可能的标记个数$m$</p>
+<p>输出：最优标记序列$y^<em>=(y^</em>_1,y^<em>_2,\ldots,y^</em>_n)$</p>
+<ol>
+<li>初始化：</li>
 </ol>
+<script type="math/tex; mode=display">
+\delta_1(l)=\sum_{k=1}^Kw_kf_k(y_0=start,y_1=l,x,i),l=1,2,\ldots,m</script><script type="math/tex; mode=display">
+\Psi_1(l)=start,l=1,2,\ldots,m</script><ol>
+<li>对于$i=1,2,\ldots,n−1$，进行递推：</li>
+</ol>
+<script type="math/tex; mode=display">
+\delta_{i+1}(l)=\max_{1\le j\le m}\lbrace\delta_i(j)+\sum_{k=1}^Kw_kf_k(y_i=j,y_{i+1}=l,x,i)\rbrace,l=1,2,\ldots,m</script><script type="math/tex; mode=display">
+\Psi_{i+1}(l)=\arg\max_{1\le j\le m}\lbrace\delta_i(j)+\sum_{k=1}^Kw_kf_k(y_i=j,y_{i+1}=l,x,i)\rbrace,l=1,2,\ldots,m</script><ol>
+<li>终止：</li>
+</ol>
+<script type="math/tex; mode=display">
+y^*_n=\arg\max_{1\le j\le m}\delta_n(j)</script><ol>
+<li>回溯：</li>
+</ol>
+<script type="math/tex; mode=display">
+y^*_i=\Psi_{i+1}(y^*_{i+1}),i=n−1,n−2,\ldots,1</script><p>最终得到最优标记序列$y^<em>=(y^</em>_1,y^<em>_2,\ldots,y^</em>_n)$</p>
 
     </div>
 
@@ -277,13 +309,10 @@ P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/09/15/NLP-4-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/" rel="prev" title="NLP-4-潜在语义分析LSA">
-      <i class="fa fa-chevron-left"></i> NLP-4-潜在语义分析LSA
+    <a href="/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/" rel="prev" title="NLP-09-隐式马尔科夫链HMM">
+      <i class="fa fa-chevron-left"></i> NLP-09-隐式马尔科夫链HMM
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/09/16/NLP-6-Gibbs%E9%87%87%E6%A0%B7/" rel="next" title="NLP-6-Gibbs采样">
-      NLP-6-Gibbs采样 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -342,7 +371,7 @@ P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">模型原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E6%A1%A3%E7%94%9F%E6%88%90"><span class="nav-number">1.1.</span> <span class="nav-text">文档生成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#EM%E7%AE%97%E6%B3%95%E6%B1%82%E8%A7%A3"><span class="nav-number">1.2.</span> <span class="nav-text">EM算法求解</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">算法</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">模型原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%84%E4%BC%B0%E8%A7%82%E6%B5%8B%E5%BA%8F%E5%88%97%E6%A6%82%E7%8E%87"><span class="nav-number">1.1.</span> <span class="nav-text">评估观测序列概率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8F%82%E6%95%B0%E5%AD%A6%E4%B9%A0%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.</span> <span class="nav-text">模型参数学习问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%84%E6%B5%8B%E9%97%AE%E9%A2%98"><span class="nav-number">1.3.</span> <span class="nav-text">预测问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">算法</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -356,7 +385,7 @@ P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">10</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

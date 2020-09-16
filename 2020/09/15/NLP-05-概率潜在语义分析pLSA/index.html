@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="模型原理文档生成M篇语料$d_i\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。  按照概率$P(d_i)$选择一篇文档$d_i$ 选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_i)$（参数$\theta$）选择一个隐含主题类别$">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-05-概率潜在语义分析pLSA">
+<meta property="og:url" content="http://example.com/2020/09/15/NLP-05-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/index.html">
+<meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="模型原理文档生成M篇语料$d_i\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。  按照概率$P(d_i)$选择一篇文档$d_i$ 选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_i)$（参数$\theta$）选择一个隐含主题类别$">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2020/09/15/NLP-05-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/img/pLSA.png">
+<meta property="article:published_time" content="2020-09-15T11:19:23.000Z">
+<meta property="article:modified_time" content="2020-09-16T01:47:39.249Z">
+<meta property="article:author" content="sholic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/15/NLP-05-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/img/pLSA.png">
+
+<link rel="canonical" href="http://example.com/2020/09/15/NLP-05-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>NLP-05-概率潜在语义分析pLSA | SHolic的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">SHolic的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/NLP-05-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-05-概率潜在语义分析pLSA
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-15 19:19:23" itemprop="dateCreated datePublished" datetime="2020-09-15T19:19:23+08:00">2020-09-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-09-16 09:47:39" itemprop="dateModified" datetime="2020-09-16T09:47:39+08:00">2020-09-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="文档生成"><a href="#文档生成" class="headerlink" title="文档生成"></a>文档生成</h3><p>M篇语料$d_i\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。</p>
+<ol>
+<li>按照概率$P(d_i)$选择一篇文档$d_i$</li>
+<li>选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_i)$（参数$\theta$）选择一个隐含主题类别$z_k$</li>
+<li>选定$z_k$后，从词分布中按照概率$P(w_j|z_k)$（参数$\phi$）选择一个词$w_j$</li>
+</ol>
+<p>如下图：</p>
+<p><img src="img\pLSA.png" alt="pLSA"></p>
+<p>文档中每个词的生成概率为：</p>
+<script type="math/tex; mode=display">
+P(d_i,w_j)=P(d_i)P(w_j|d_i)=P(d_i)\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)</script><p>令$\phi_{kj}$表示词项$w_j$出现在主题$z_k$中的概率，即</p>
+<script type="math/tex; mode=display">
+P(w_j|z_k)=\phi_{k,j},\sum_{w_j\in\mathcal{V}}\phi_{k,j}=1</script><p>令$\theta_{i,k}$表示主题$z_k$出现在文档$d_i$中的概率，即</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i)=\theta_{i,k},\sum_{z_k\in\mathcal{Z}}\theta_{i,k}=1</script><p>令$\Phi=(\phi_1,\phi_2,\ldots,\phi_K)$为K个主题到词的概率，M篇语料$(d_1,d_2,\ldots,d_M)$中每篇文档$d_i$中，$\Theta=(\theta_1,\theta_2,\ldots,\theta_M)$为M个文档到主题的概率。</p>
+<p>令$n(d_i,w_j)$表示词项$w_j$在文档$d_i$中的词频，$n(d_i)$表示文档$d_i$中词的总数，则有：</p>
+<script type="math/tex; mode=display">
+n(d_i)=\sum_{w_j\in\mathcal{V}}n(d_i,w_j)</script><p>由词与词之间独立，文档与文档之间独立，整个语料词分布为：</p>
+<script type="math/tex; mode=display">
+P(W|D)=\prod_{i=1}^M\prod_{j=1}^NP(d_i,w_j)^{n(d_i,w_j)}</script><p>可以得到对数似然函数：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+\mathcal{L(\Phi,\Theta)}&=\log P(W|D)\\
+&=\sum_{i=1}^M\sum_{j=1}^Nn(d_i,w_j)\log P(d_i,w_j)\\
+&=\sum_{i=1}^M\sum_{j=1}^Nn(d_i,w_j)\left(\log P(d_i)+\log\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)\right)\\
+&=\sum_{i=1}^Mn(d_i)\left(\log P(d_i)+\sum_{j=1}^N\frac{n(d_i,w_j)}{n(d_i)}\log\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)\right)\\
+&=\sum_{i=1}^Mn(d_i)\left(\log P(d_i)+\sum_{j=1}^N\frac{n(d_i,w_j)}{n(d_i)}\log\sum_{k=1}^K\phi_{k,j}\theta_{i,k}\right)
+\end{align}</script><h3 id="EM算法求解"><a href="#EM算法求解" class="headerlink" title="EM算法求解"></a>EM算法求解</h3><p>可以使用EM算法，通过$\phi_{k,j}$和$\theta_{m,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过隐参数更新。</p>
+<p>E步，隐变量的后验分布：</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j}\theta_{i,k}}{\sum_{l=1}^K\phi_{l,j}\theta_{i,l}}</script><p>M步，最大化样本分布的对数似然函数$\mathcal{L}$，第一项与参数无关，去掉 ：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+\mathcal{L}&=\sum_{m=1}^M\sum_{j=1}^Nn(d_i,w_j)\log\sum_{k=1}^K\phi_{k,j}\theta_{i,k}\\
+&=\sum_{m=1}^M\sum_{j=1}^Nn(d_i,w_j)\sum_{k=1}^KP(z_k|d_i,w_j)log[\phi_{k,j}\theta_{i,k}]
+\end{align}</script><p>由$\sum_{j=1}^m\phi_{k,j}=1$和$\sum_{k=1}^K\theta_{i,k}=1$，引入拉格朗日乘子，求偏导</p>
+<p>参数更新公式为：</p>
+<script type="math/tex; mode=display">
+\phi_{k,j}=\frac{\sum_{m=1}^Mn(d_i,w_j)P(z_k|d_i,w_j)}{\sum_{m=1}^N\sum_{i=1}^Mn(d_i,w_m)P(z_k|d_i,w_m)}</script><script type="math/tex; mode=display">
+\theta_{i,k}=\frac{\sum_{j=1}^Nn(d_i,w_j)P(z_k|d_i,w_j)}{n(d_i)}</script><h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><p>输入：单词-文本共现数据</p>
+<p>输出：和。</p>
+<ol>
+<li><p>设置参数和的初始值。</p>
+</li>
+<li><p>迭代执行以下E步，M步，直到收敛为止：</p>
+<p>E步：</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j}\theta_{i,k}}{\sum_{l=1}^K\phi_{l,j}\theta_{i,l}}</script><p>M步：</p>
+<script type="math/tex; mode=display">
+\phi_{k,j}=\frac{\sum_{m=1}^Mn(d_i,w_j)P(z_k|d_i,w_j)}{\sum_{m=1}^N\sum_{i=1}^Mn(d_i,w_m)P(z_k|d_i,w_m)}</script><script type="math/tex; mode=display">
+\theta_{i,k}=\frac{\sum_{j=1}^Nn(d_i,w_j)P(z_k|d_i,w_j)}{n(d_i)}</script></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/15/NLP-04-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/" rel="prev" title="NLP-04-潜在语义分析LSA">
+      <i class="fa fa-chevron-left"></i> NLP-04-潜在语义分析LSA
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-06-Gibbs%E9%87%87%E6%A0%B7/" rel="next" title="NLP-06-Gibbs采样">
+      NLP-06-Gibbs采样 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">模型原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E6%A1%A3%E7%94%9F%E6%88%90"><span class="nav-number">1.1.</span> <span class="nav-text">文档生成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#EM%E7%AE%97%E6%B3%95%E6%B1%82%E8%A7%A3"><span class="nav-number">1.2.</span> <span class="nav-text">EM算法求解</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">算法</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sholic</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sholic</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
