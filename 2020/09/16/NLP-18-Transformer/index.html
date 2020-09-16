@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="框架RNN系列的一个天生局限就是其时序性，以文本序列为例，我们必须要先计算出t时刻的隐状态信息，才能够继续计算下一时刻的相应信息，这就导致大规模数据下模型整体效率比较低，难以实现计算的并行化。Transformer将Encoder和Decoder部分的RNN系列全部替换为Attention，使模型变成Attention is all you need   self-Attention框架 Atte">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-18-Transformer">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-18-Transformer/index.html">
+<meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="框架RNN系列的一个天生局限就是其时序性，以文本序列为例，我们必须要先计算出t时刻的隐状态信息，才能够继续计算下一时刻的相应信息，这就导致大规模数据下模型整体效率比较低，难以实现计算的并行化。Transformer将Encoder和Decoder部分的RNN系列全部替换为Attention，使模型变成Attention is all you need   self-Attention框架 Atte">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-18-Transformer/NLPimg/transformer1.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-18-Transformer/NLPimg/transformer2.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-18-Transformer/NLPimg/transformer3.svg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-18-Transformer/NLPimg/transformer3.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-18-Transformer/NLPimg/transformer4.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-18-Transformer/NLPimg/transformer5.jpg">
+<meta property="article:published_time" content="2020-09-16T02:14:13.000Z">
+<meta property="article:modified_time" content="2020-09-16T02:15:08.842Z">
+<meta property="article:author" content="sholic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-18-Transformer/NLPimg/transformer1.png">
+
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-18-Transformer/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>NLP-18-Transformer | SHolic的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">SHolic的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-18-Transformer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-18-Transformer
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 10:14:13 / 修改时间：10:15:08" itemprop="dateCreated datePublished" datetime="2020-09-16T10:14:13+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="框架"><a href="#框架" class="headerlink" title="框架"></a>框架</h2><p>RNN系列的一个天生局限就是其时序性，以文本序列为例，我们必须要先计算出t时刻的隐状态信息，才能够继续计算下一时刻的相应信息，这就导致大规模数据下模型整体效率比较低，难以实现计算的并行化。Transformer将Encoder和Decoder部分的RNN系列全部替换为Attention，使模型变成Attention is all you need</p>
+<p><img src="NLPimg\transformer1.png" alt="transformer1"> </p>
+<h2 id="self-Attention"><a href="#self-Attention" class="headerlink" title="self-Attention"></a>self-Attention</h2><h3 id="框架-1"><a href="#框架-1" class="headerlink" title="框架"></a>框架</h3><p><img src="NLPimg\transformer2.png" alt="transformer3"></p>
+<h3 id="Attention一般形式"><a href="#Attention一般形式" class="headerlink" title="Attention一般形式"></a>Attention一般形式</h3><p>Decoder上下文信息$c$与Encoder隐状态$h_j$和Decoder隐状态$s_{i-1}$关系</p>
+<script type="math/tex; mode=display">
+c_i=\sum_ja_{ij}h_j=\sum_ja(s_{i-1},h_j)h_j</script><ul>
+<li>第一类是需要与一个变量集合逐一比较的，我们称为query，简记为$q$。</li>
+<li>而那个集合里每一个变量作为第二类变量，是要与$q$进行比较的，称为key，简记为$k$。</li>
+<li>最后一类变量是被权重$a_{ij}$对应j位置赋权的，称为value，简记为$v$(这样定义，很容易发现key和value是一一对应的，因为第j个需要和query比较的key，得到的权重要赋予给第j个value)。</li>
+</ul>
+<p>与上述具体的过程对应起来，就是$q=s_{i-1},k=v=h_j$</p>
+<p>用矩阵表示</p>
+<script type="math/tex; mode=display">
+Q=(q_1,q_2,\dots,q_m)^T,K=(k_1,k_2,\dots,k_n)^T,V=(v_1,v_2,v_n)^T</script><p>其中，m和n是序列长度</p>
+<p>Attention一般形式表述：</p>
+<script type="math/tex; mode=display">
+Attention(Q,K,V)=(a(Q_1,K)V,a(Q_2,K)V,\dots,a(Q_m,K)V)</script><script type="math/tex; mode=display">
+a(Q_1,K)=(softmax(a(q_1,k_1)),softmax(a(q_1,k_2)),\dots,softmax(a(q_1,k_n)))</script><p>用到乘性打分函数，一般形式为：</p>
+<script type="math/tex; mode=display">
+Attention(Q,K,V)=softmax(QK^T)V</script><p>假设$Q$，$K$中的每一个$d_k$维向量是$q$，$k$。$q$，$k$中的每个分量独立同分布于均值为0，方差为1的随机变量。那么$q\cdot k$就将服从于均值为0，方差为$d_k$的随机变量。这就在作为$d_k$的方差很大的时候，导致对于固定的$q_i$来说，其与每个$k_j$的内积将会差异很大。那么在进行softmax运算的时候，就会呈现要么趋向于0，要么趋向于1的情况，因此导致整体梯度的更新处于一个较小的区域。</p>
+<p>引入了缩放因子以消除大方差的影响：</p>
+<script type="math/tex; mode=display">
+Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V</script><h3 id="self-Attention-1"><a href="#self-Attention-1" class="headerlink" title="self-Attention"></a>self-Attention</h3><p>Transformer的核心思想就是用Attention来替代原来Encoder和Decoder部分的RNN，先前RNN的主要作用就是将当前时刻输入的词向量信息与前一时刻隐状态进行整合，形成该时刻的隐状态信息，换句话说，就是将词向量信息抽象为可供模型使用的高层次信息。</p>
+<p><img src="NLPimg\transformer3.svg" alt="Transformer2"></p>
+<p>self-Attention(自注意力机制) ，优点是所有待处理的向量在矩阵运算下可以很好的并行处理，加快了以前Encoder和Decoder的效率。</p>
+<h3 id="Multi-Headed-Attention"><a href="#Multi-Headed-Attention" class="headerlink" title="Multi-Headed Attention"></a>Multi-Headed Attention</h3><p>多数情况下，单一的self-Attention难以捕获序列信息的多样性。因此考虑多个相同操作的self-Attention平行的提取每个词语的信息，然后再将多个Attention的结果拼接起来，用于后续层次的操作。这点类似于卷积神经网络中多个卷积核同时作用一个矩阵对象的想法，都是试图取实现信息不同角度的多样化采集。</p>
+<h2 id="Positional-Encoding"><a href="#Positional-Encoding" class="headerlink" title="Positional-Encoding"></a>Positional-Encoding</h2><p>在RNN当中可以很好的保留词与词之间的序列顺序，现在通过self-Attention并行化以后，这个信息难以被描述出来。</p>
+<p>引入位置向量$PE(pos)$，并与输入的词向量进行求和，之后输入对应的下一层，这就要求位置向量应该与词向量具有相同的维度$d_{model}$ ,并在奇偶性不同的分量位置上设计了不同的取值，如下：</p>
+<script type="math/tex; mode=display">
+PE(pos,2i)=\sin(\frac{pos}{10000^{\frac{2i}{d_{model}}}})，偶数位分量</script><script type="math/tex; mode=display">
+PE(pos,2i+1)=\cos(\frac{pos}{10000^{\frac{2i}{d_{model}}}})，奇数位份量</script><p>其中，pos为当前词语在句子中的位置(1,2,3,4….)，i为位置向量的分量位置</p>
+<p>位置的偏移角度看$PE(pos+k)$</p>
+<script type="math/tex; mode=display">
+\begin{align}PE(pos+k)
+&=\sin(\frac{pos+k}{10000^{\frac{2i}{d_{model}}}})\\
+&=\sin(\frac{pos}{10000^{\frac{2i}{d_{model}}}})\cos(\frac{k}{10000^{\frac{2i}{d_{model}}}})+cos(\frac{pos}{10000^{\frac{2i}{d_{model}}}})\sin(\frac{k}{10000^{\frac{2i}{d_{model}}}})\\
+&=PE(pos,2i)PE(k,2i+1)+PE(pos,2i+1)PE(k,2i)
+\end{align}</script><p>在pos位置偏移k个位置以后的位置向量可以表示为pos位置向量的线性组合，使得位置的相对信息有了一定体现。</p>
+<h2 id="残差边"><a href="#残差边" class="headerlink" title="残差边"></a>残差边</h2><p>残差边（short-cut）在图像的resnet中已经被广泛应用了，它的出现是为了防止网络层数的加深导致网络内的参数退化。其想法是将低层的特征跃过一些网络层直接送进高层网络，这就保证了网络的最差情况也能学到那个低层特征本身。 </p>
+<p>原因是过去的网络是计算$l$层输入$x(l)$的线性与非线性的变换$z^{(l+1)}=\sigma(wx^{(l)}+b)$，而残差边的思想是将低层的（比如$l-1$层$x^{(l-1)}$）特征直接送入$l$层参与运算$z^{(l+1)}=\sigma(wx^{(l)}+b+x^{(l-1)})$,这样一来，即使参数w，b都退化为0，也还能留下低层特征的信息送到高层，不至于让信息在深层网络传递的过程中丢失过多。</p>
+<h2 id="Layer-Normalization"><a href="#Layer-Normalization" class="headerlink" title="Layer-Normalization"></a>Layer-Normalization</h2><p>防止数据的偏差越来越大导致的梯度消失或者梯度爆炸 </p>
+<p>BN的具体做法就是对每一小批数据，在批这个方向上做归一化。如下图所示： </p>
+<p><img src="NLPimg\transformer3.png" alt="transformer3"></p>
+<p>右半边求均值是沿着数据 batch_size的方向进行的，其计算公式如下：</p>
+<script type="math/tex; mode=display">
+BN(x_i)=\alpha\times\frac{x_i-\mu_b}{\sqrt{\sigma^2_B+\epsilon}}+\beta</script><p>LN也是归一化数据的一种方式，不过 LN 是在每一个样本上计算均值和方差：</p>
+<p><img src="NLPimg\transformer4.png" alt="transformer4"></p>
+<p>下面看一下 LN 的公式： </p>
+<script type="math/tex; mode=display">
+LN(x_i)=\alpha\times\frac{x_i-\mu_L}{\sqrt{\sigma^2_L+\epsilon}}+\beta</script><h2 id="Mask"><a href="#Mask" class="headerlink" title="Mask"></a>Mask</h2><h3 id="Padding-Mask"><a href="#Padding-Mask" class="headerlink" title="Padding Mask"></a>Padding Mask</h3><p>每个批次输入序列长度是不一样的也就是说，我们要对输入序列进行对齐。具体来说，就是给在较短的序列后面填充 0。但是如果输入的序列太长，则是截取左边的内容，把多余的直接舍弃。</p>
+<h3 id="Sequence-Mask"><a href="#Sequence-Mask" class="headerlink" title="Sequence Mask"></a>Sequence Mask</h3><p>序列在解码的过程中，对于$i$时刻的解码，只能依赖到$i$之前时刻的词语信息，以保证解码过程中的有序性。因此要对$i$时刻后的信息进行masking操作。关于masking的具体做法，主要是设置一个与序列长度相同维度的mask向量，将其第$i$个分量以后的分量全部置为0，第$i$个分量以前的分量全部置为1。用于标记解码序列哪些在网络中的计算是有效的。 产生一个上三角矩阵，下三角的值全为0 </p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="NLPimg\transformer5.jpg" alt="transformer5"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-17-Attention/" rel="prev" title="NLP-17-Attention">
+      <i class="fa fa-chevron-left"></i> NLP-17-Attention
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-19-GPT/" rel="next" title="NLP-19-GPT">
+      NLP-19-GPT <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%86%E6%9E%B6"><span class="nav-number">1.</span> <span class="nav-text">框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#self-Attention"><span class="nav-number">2.</span> <span class="nav-text">self-Attention</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A1%86%E6%9E%B6-1"><span class="nav-number">2.1.</span> <span class="nav-text">框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Attention%E4%B8%80%E8%88%AC%E5%BD%A2%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">Attention一般形式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#self-Attention-1"><span class="nav-number">2.3.</span> <span class="nav-text">self-Attention</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Multi-Headed-Attention"><span class="nav-number">2.4.</span> <span class="nav-text">Multi-Headed Attention</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Positional-Encoding"><span class="nav-number">3.</span> <span class="nav-text">Positional-Encoding</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AE%8B%E5%B7%AE%E8%BE%B9"><span class="nav-number">4.</span> <span class="nav-text">残差边</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Layer-Normalization"><span class="nav-number">5.</span> <span class="nav-text">Layer-Normalization</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Mask"><span class="nav-number">6.</span> <span class="nav-text">Mask</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Padding-Mask"><span class="nav-number">6.1.</span> <span class="nav-text">Padding Mask</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Sequence-Mask"><span class="nav-number">6.2.</span> <span class="nav-text">Sequence Mask</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sholic</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sholic</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

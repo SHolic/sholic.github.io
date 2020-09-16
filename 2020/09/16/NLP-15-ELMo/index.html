@@ -20,17 +20,22 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="分类">
-<meta property="og:url" content="http://example.com/categories/index.html">
+  <meta name="description" content="Word2Vec每个词对应一个固定的向量，对于多义词无能为力 ELMo会根据上下文来推断每个词对应的词向量，对于多义词，可以结合前后语境对多义词进行理解  LSTM语言模型流程给定一串长度为$N$的词条$(t_1,t_2,\dots,t_N)$，前向语言模型通过对给定历史$(t_1,t_2,\dots,t_{k−1})$预测$t_k$进行建模  模型公式：  p(t_1,t_2,\dots,t_">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-15-ELMo">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-15-ELMo/index.html">
 <meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="Word2Vec每个词对应一个固定的向量，对于多义词无能为力 ELMo会根据上下文来推断每个词对应的词向量，对于多义词，可以结合前后语境对多义词进行理解  LSTM语言模型流程给定一串长度为$N$的词条$(t_1,t_2,\dots,t_N)$，前向语言模型通过对给定历史$(t_1,t_2,\dots,t_{k−1})$预测$t_k$进行建模  模型公式：  p(t_1,t_2,\dots,t_">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-09-16T01:48:23.000Z">
-<meta property="article:modified_time" content="2020-09-16T01:48:46.804Z">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-15-ELMo/NLPimg/elmo4.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-15-ELMo/NLPimg/elmo5.jpg">
+<meta property="article:published_time" content="2020-09-16T02:06:15.000Z">
+<meta property="article:modified_time" content="2020-09-16T02:13:08.345Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-15-ELMo/NLPimg/elmo4.png">
 
-<link rel="canonical" href="http://example.com/categories/">
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-15-ELMo/">
 
 
 <script id="page-configurations">
@@ -38,13 +43,12 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>分类 | SHolic的博客
-</title>
+  <title>NLP-15-ELMo | SHolic的博客</title>
   
 
 
@@ -146,51 +150,127 @@
       <div class="main-inner">
         <div class="content-wrap">
           
-  
-  
 
-          <div class="content page posts-expand">
+          <div class="content post posts-expand">
             
 
     
-    
-    
-    <div class="post-block" lang="zh-CN">
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-15-ELMo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
       <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-15-ELMo
+        </h1>
 
-<h1 class="post-title" itemprop="name headline">分类
-</h1>
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
 
-<div class="post-meta">
+              <time title="创建时间：2020-09-16 10:06:15 / 修改时间：10:13:08" itemprop="dateCreated datePublished" datetime="2020-09-16T10:06:15+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ul>
+<li>Word2Vec每个词对应一个固定的向量，对于多义词无能为力</li>
+<li>ELMo会根据上下文来推断每个词对应的词向量，对于多义词，可以结合前后语境对多义词进行理解</li>
+</ul>
+<h2 id="LSTM语言模型流程"><a href="#LSTM语言模型流程" class="headerlink" title="LSTM语言模型流程"></a>LSTM语言模型流程</h2><p>给定一串长度为$N$的词条$(t_1,t_2,\dots,t_N)$，前向语言模型通过对给定历史$(t_1,t_2,\dots,t_{k−1})$预测$t_k$进行建模</p>
+<p><img src="NLPimg\elmo4.png" alt="elmo4"></p>
+<p>模型公式：</p>
+<script type="math/tex; mode=display">
+p(t_1,t_2,\dots,t_N)=\prod^N_{k=1}p(t_k|t_1,t_2,\dots,t_{k-1})</script><p><strong>流程</strong></p>
+<p>以“the cat sat on the mat”这句话为例。在某一个时刻$k$时，输入为the，输出cat的概率。</p>
+<ol>
+<li>将the转换成word embedding，对应输入$x_k$，其中$x_k$为$n\times1$维列向量</li>
+<li>将上一时刻的输出/隐状态$h_{k−1}$及第一步中的$x_k$一并送入lstm，并得到输出及隐状态$h_k$，其中$h_{k-1}$和$h_k$是$m\times1$维列向量</li>
+<li>将lstm的输出$h_k$，与上下文矩阵$W’$相乘，即$W’h_k$得到一个列向量，再将该列向量经过softmax归一化。其中，假定数据集有$V$个单词，$W’$是$|V|\times m$的矩阵，$h_k$是$m\times1$的列向量，于是最终结果是$|V|\times1$的归一化后向量，即从输入单词得到的针对每个单词的概率。 </li>
+</ol>
+<h2 id="ELMo的biLSTM语言模型流程"><a href="#ELMo的biLSTM语言模型流程" class="headerlink" title="ELMo的biLSTM语言模型流程"></a>ELMo的biLSTM语言模型流程</h2><p>相对于LSTM有两个改进，第一个是使用了多层LSTM，第二个是增加了后向语言模型</p>
+<p>对于英语文本，可以在输入层和输出层加入CNN结构，减少规模参数并解决OOV（Out-of-Vocabulary）问题</p>
+<p><img src="NLPimg\elmo5.jpg" alt="elmo5"></p>
+<p>后向LSTM模型公式：</p>
+<script type="math/tex; mode=display">
+p(t_1,t_2,\dots,t_N)=\prod^N_{k=1}p(t_k|t_{k+1},t_{k+2},\dots,t_N)</script><p>ELMo将前后向结合，得出最大似然公式：</p>
+<script type="math/tex; mode=display">
+L=\sum_{k=1}^N(\log p(t_k|t_1,t_2,\dots,t_{k-1};\Theta_x,\overrightarrow{\Theta_{LSTM}},\Theta_s)
++p(t_k|t_{k+1},t_{k+2},\dots,t_N;\Theta_x,\overleftarrow{\Theta_{LSTM}},\Theta_s))</script><p>其中，$\overrightarrow{\Theta_{LSTM}}$表示前向lstm的网络参数，反向的lstm的网络参数同理，$\Theta_x$表示映射层的共享（word embedding），$\Theta_s$表示上下文矩阵的参数（概率计算）</p>
+<h2 id="表征生成"><a href="#表征生成" class="headerlink" title="表征生成"></a>表征生成</h2><p>假定前向lstm语言模型的第$j$层第$k$时刻的输出向量为$\overrightarrow{h^{LM}_{k,j}}$，后向lstm的第$j$层的第$k$时刻的输出向量为$\overleftarrow{h^{LM}_{k,j}}$</p>
+<p>对于每个单词（token）$t_k$，对于L层的双向lstm语言模型，一共有2L+1个表征</p>
+<script type="math/tex; mode=display">
+R_k=\{x_k^{LM},\overrightarrow{h^{LM}_{k,j}},\overleftarrow{h^{LM}_{k,j}}|j=1,2,\dots,L\}=\{h^{LM}_{k,j}|j=0,1,\dots,L\}</script><p>其中，$h^{LM}_{k,0}$是word embedding，也就是lstm的输入。对于每一层的双向lstm语言模型，$h^{LM}_{k,j}=[\overrightarrow{h^{LM}_{k,j}};\overleftarrow{h^{LM}_{k,j}}]$</p>
+<p>ELMo向量的生成可以是最顶层lstm的输出，即$h^{LM}_{k,L}$，或者对每层向量加权重$s^{task}_j$，将每层的向量与权重相乘，然后再乘以一个权重$\gamma$</p>
+<script type="math/tex; mode=display">
+ELMO^{task}_k=E(R_k;\Theta^{task})=\gamma^{task}\sum^L_{j=0}s^{task}_jh^{LM}_{k,j}</script><p>一个单词的最终向量是$[x_k;ELMo^{task}_k]$。</p>
+<p>经过实验，高层用于语义理解或词义消歧效果好；低层对于句法信息或词性标注效果好</p>
+<ul>
+<li>添加$s^{task}_j$是因为每层学的东西不一样，侧重点不同</li>
+<li>添加$\gamma$是因为需要配合最终向量$x_k$的缩放系数</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-14-%E8%AE%B0%E5%BF%86%E7%BD%91%E7%BB%9C/" rel="prev" title="NLP-14-记忆网络">
+      <i class="fa fa-chevron-left"></i> NLP-14-记忆网络
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-16-ULMFit/" rel="next" title="NLP-16-ULMFit">
+      NLP-16-ULMFit <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
   
 
-</div>
-
-</header>
-
-      
-      
-      
-      <div class="post-body">
-          <div class="category-all-page">
-            <div class="category-all-title">
-              目前共计 1 个分类
-            </div>
-            <div class="category-all">
-              <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/">自然语言处理</a><span class="category-list-count">20</span></li></ul>
-            </div>
-          </div>
-        
-      </div>
-      
-      
-      
-    </div>
-    
-
-    
-    
-    
 
 
           </div>
@@ -241,6 +321,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#LSTM%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B%E6%B5%81%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">LSTM语言模型流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ELMo%E7%9A%84biLSTM%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">ELMo的biLSTM语言模型流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8%E5%BE%81%E7%94%9F%E6%88%90"><span class="nav-number">3.</span> <span class="nav-text">表征生成</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

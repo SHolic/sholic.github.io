@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="seq2seq ELMo输入可以是一个定长或者不定长的序列，但输出一般要求是一个固定长度的序列（单个标签较为常见，即长度为1的序列） seq2seq输入与输出的序列长度都不固定，比如翻译   Encoder和Decoder一般都是RNN，通常为LSTM或者GRU Encoder “欢迎&#x2F;来&#x2F;北京”这些词转换成词向量，也就是Embedding，用$E(w_i)$来表示，与上一时刻的隐状态$h_{i-">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-17-Attention">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-17-Attention/index.html">
+<meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="seq2seq ELMo输入可以是一个定长或者不定长的序列，但输出一般要求是一个固定长度的序列（单个标签较为常见，即长度为1的序列） seq2seq输入与输出的序列长度都不固定，比如翻译   Encoder和Decoder一般都是RNN，通常为LSTM或者GRU Encoder “欢迎&#x2F;来&#x2F;北京”这些词转换成词向量，也就是Embedding，用$E(w_i)$来表示，与上一时刻的隐状态$h_{i-">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-17-Attention/NLPimg/attention1.jpg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-17-Attention/NLPimg/attention2.jpg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-17-Attention/NLPimg/attention3.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-17-Attention/NLPimg/attention4.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-17-Attention/NLPimg/attention5.png">
+<meta property="article:published_time" content="2020-09-16T02:08:43.000Z">
+<meta property="article:modified_time" content="2020-09-16T02:13:25.857Z">
+<meta property="article:author" content="sholic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-17-Attention/NLPimg/attention1.jpg">
+
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-17-Attention/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>NLP-17-Attention | SHolic的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">SHolic的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-17-Attention/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-17-Attention
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 10:08:43 / 修改时间：10:13:25" itemprop="dateCreated datePublished" datetime="2020-09-16T10:08:43+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="seq2seq"><a href="#seq2seq" class="headerlink" title="seq2seq"></a>seq2seq</h2><ul>
+<li>ELMo输入可以是一个定长或者不定长的序列，但输出一般要求是一个固定长度的序列（单个标签较为常见，即长度为1的序列）</li>
+<li>seq2seq输入与输出的序列长度都不固定，比如翻译</li>
+</ul>
+<p><img src="NLPimg\attention1.jpg" alt="seq2seq1"></p>
+<p>Encoder和Decoder一般都是RNN，通常为LSTM或者GRU</p>
+<p><strong>Encoder</strong></p>
+<p>“欢迎/来/北京”这些词转换成词向量，也就是Embedding，用$E(w_i)$来表示，与上一时刻的隐状态$h_{i-1}$按照时间顺序进行输入，每一个时刻输出一个隐状态$h_i$我们可以用函数$f$表达RNN隐藏层的变换：$h_i=f(E(w_i),h_{i-1})$。假设有t个词，解码器将输出整个输入序列的m维上下文向量$c$，这个$c$就相当于从“欢迎/来/北京”这几个单词中提炼出来的大概意思一样，包含了这句话的含义。 </p>
+<p><strong>Decoder</strong></p>
+<p>每一时刻的输入为Encoder输出的$c$和Decoder前一时刻解码的输出$s_{i-1}$，还有前一时刻预测的词的向量$E(o_i)$，我们可以用函数$g$表达解码器隐藏层变换：$s_i=g(c,s_{i-1},E(o_{i-1}))$。直到解码解出“_EOS”，标志着解码的结束。 </p>
+<h2 id="Attention"><a href="#Attention" class="headerlink" title="Attention"></a>Attention</h2><p>seq2seq有个潜在的问题就出在编码器产生的源语言上下文向量c上</p>
+<ul>
+<li>当输入序列很长时，通过循环网络产生的c向量很难表达整句的信息，而是偏向于表达离序列结尾近的信息 </li>
+<li>所有的解码都用同一个上下文c向量，就很难表现出源语言词汇的具体贡献情况（ 目标语言词汇与源语言词汇的大致对应关系 ）</li>
+</ul>
+<p>Attention机制能解决seq2seq的局限性，注意力机制(Attention)其实本质上就是一种权重分配</p>
+<p><img src="NLPimg\attention2.jpg" alt="seq2seq2"></p>
+<p>在解码的每一个过程（预测每一个词）中调整权重取到不一样的$c$向量，更通俗的讲就是$c$就是包含“欢迎来北京”这句话的意思，翻译到第一个词“welcome”的时候，需要着重去看“欢迎”这个词。 </p>
+<p>假设编码器每个隐藏状态为$h_j$，序列长度为T，那么在第$i$个时刻$c$向量的计算方式如下：</p>
+<script type="math/tex; mode=display">
+c_1=\alpha_{11}h_1+\alpha_{12}h_2+\dots+\alpha_{1T}h_T=\sum_{j=1}^T\alpha_{1j}h_j</script><script type="math/tex; mode=display">
+c_i=\sum_{j=1}^T\alpha_{ij}h_j</script><p>将隐状态$s_{i-1}$与源语言的每个隐状态$h_j$逐一比较，计算关联得分，即可作为每个源语言隐状态$h_j$前的权重$a_{ij}$</p>
+<script type="math/tex; mode=display">
+\alpha_{ij}=softmax(\alpha(s_{i-1},h_j)),j=1,2,\dots,T</script><p>其中$a(\cdot)$为距离刻画函数，可以是：</p>
+<script type="math/tex; mode=display">
+\alpha(s_{i-1},h_j)=softmax(v_\alpha^T\tanh(W_\alpha s_{i-1}+U_\alpha h_j))</script><h2 id="Attention变体"><a href="#Attention变体" class="headerlink" title="Attention变体"></a>Attention变体</h2><h3 id="按score-function分"><a href="#按score-function分" class="headerlink" title="按score function分"></a>按score function分</h3><p><strong>加代模型</strong></p>
+<script type="math/tex; mode=display">
+score(s_i,h_j)=v^T\tanh(Ws_i+Uh_j)</script><p><strong>点积模型</strong></p>
+<script type="math/tex; mode=display">
+score(s_i,h_j)=s^T_ih_j</script><p><strong>缩放点积模型</strong></p>
+<script type="math/tex; mode=display">
+score(s_i,h_j)=\frac{s^T_ih_j}{\sqrt{d}}</script><p><strong>双线性模型</strong></p>
+<script type="math/tex; mode=display">
+score(s_i,h_j)=s^T_iWq</script><p>当输入向量的维度$d$比较高，点积模型的值通常有比较大方差，从而导致softmax函数的梯度会比较小。因此，缩放点积模型可以较好地解决这个问题。</p>
+<p>双线性模型可以看做是一种泛化的点积模型。假设公式中$W=U^TV$ ，双线性模型可以写为$score(s_i,h_J)=s^T_iU^TVh_j=(Us_i)^T(Vh_j)$，即分别对$s_i$和$h_j$进行线性变换后计算点积。相比点积模型，双线性模型在计算相似度时引入了非对称性。</p>
+<h3 id="按alignment-function分"><a href="#按alignment-function分" class="headerlink" title="按alignment function分"></a>按alignment function分</h3><p><strong>Global Attention</strong></p>
+<p>global attention 是所有输入向量作为加权集合，使用 softmax 作为 alignment function。</p>
+<p><img src="NLPimg\attention3.png" alt="attention3"></p>
+<p><strong>Local Attention</strong></p>
+<p>每一次生成目标单词（target word）都分析source sentence中所有单词的做法代价太高。为了缓解这个问题，建议只集中关注一个固定大小2D+1窗口中的source sentence的注释（annotation），即只关注最能帮助预测下一个词汇的source sentence中某个词汇前后step的隐藏状态（hidden state）</p>
+<p><img src="NLPimg\attention4.png" alt="attention4"></p>
+<p>公式如下：</p>
+<script type="math/tex; mode=display">
+c_i=\sum^{p_i+D}_{j=p_i-D}\alpha_{i,j}h_j</script><script type="math/tex; mode=display">
+p_i=n\cdot\sigma(v^T_p\cdot\sigma(W_ps_{i-1}))</script><script type="math/tex; mode=display">
+\alpha_{i,j}=softmax(score(s_{i-1},h_j))\exp(-\frac{(j-p_i)^2}{2(D/2)^2})</script><p>其中，D由用户自定义，而窗口中心即聚焦的$p_i$可以也设为$i$或者基于Decoder之前的隐藏信息$s_{i-1}$决定。$n$表示source sentence的长度。</p>
+<p>添加的高斯分布项使得alignment权重随着$j$在窗口中远离中心$p_i$移动逐渐降低，也就是说对于给予靠近$p_i$的annotation更多的影响力。 </p>
+<p>另外和global attention不同的是$\alpha_i$的大小被固定为$2D−1$，只有处于窗口范围内的annotation才对输出有影响。</p>
+<p>local attention可以看成是alignment权重与一个截断高斯分布相乘后的global attention（窗口外的annotation取值为0）</p>
+<h3 id="按generate-context-vector-function分"><a href="#按generate-context-vector-function分" class="headerlink" title="按generate context vector function分"></a>按generate context vector function分</h3><p><strong>Hard Attention</strong></p>
+<p>hard attention 是一个随机采样，采样集合是输入向量的集合，采样的概率分布是alignment function 产出的 attention weight。因此，hard attention 的输出是某一个特定的输入向量。 </p>
+<p><strong>Soft Attention</strong></p>
+<p>soft attention 是一个带权求和的过程，求和集合是输入向量的集合，对应权重是 alignment function 产出的 attention weight。hard / soft attention 中，soft attention 是更常用的，因为它可导，可直接嵌入到模型中进行训练，hard attention 文中 suggests a Monte Carlo based sampling approximation of gradient。 </p>
+<h3 id="其他Attention"><a href="#其他Attention" class="headerlink" title="其他Attention"></a>其他Attention</h3><p><strong>Self-Attention</strong></p>
+<p>self-Attention(自注意力机制) ，优点是所有待处理的向量在矩阵运算下可以很好的并行处理，加快了以前Encoder和Decoder的效率。</p>
+<p>详情见Transformer</p>
+<p><strong>Hierarchical Attention</strong></p>
+<p>网络可以被看作为两部分，第一部分为词“注意”部分，另一部分为句“注意”部分。整个网络通过将一个句子分割为几部分，对于每部分，都使用双向RNN结合“注意力”机制将小句子映射为一个向量，然后对于映射得到的一组序列向量，我们再通过一层双向RNN结合“注意力”机制实现对文本的分类。</p>
+<p><img src="NLPimg\attention5.png" alt="attention5"></p>
+<p> RNN 对序列建模，但是缺乏层次信息。而语言本身是具有层次结构，短语组成句子，句子组成篇章。因此研究者十分希望把语言中的这些层次结构在模型中得以体现，Hierarchical 的方式就出现了：从 word attention 到 sentence attention。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-16-ULMFit/" rel="prev" title="NLP-16-ULMFit">
+      <i class="fa fa-chevron-left"></i> NLP-16-ULMFit
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-18-Transformer/" rel="next" title="NLP-18-Transformer">
+      NLP-18-Transformer <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#seq2seq"><span class="nav-number">1.</span> <span class="nav-text">seq2seq</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Attention"><span class="nav-number">2.</span> <span class="nav-text">Attention</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Attention%E5%8F%98%E4%BD%93"><span class="nav-number">3.</span> <span class="nav-text">Attention变体</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8C%89score-function%E5%88%86"><span class="nav-number">3.1.</span> <span class="nav-text">按score function分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8C%89alignment-function%E5%88%86"><span class="nav-number">3.2.</span> <span class="nav-text">按alignment function分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8C%89generate-context-vector-function%E5%88%86"><span class="nav-number">3.3.</span> <span class="nav-text">按generate context vector function分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96Attention"><span class="nav-number">3.4.</span> <span class="nav-text">其他Attention</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sholic</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sholic</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

@@ -20,17 +20,25 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="分类">
-<meta property="og:url" content="http://example.com/categories/index.html">
+  <meta name="description" content="框架GPT 使用 Transformer 的 Decoder 结构，并对 Transformer Decoder 进行了一些改动，原本的 Decoder 包含了两个 Multi-Head Attention 结构，GPT 只保留了 Mask Multi-Head Attention  Mask操作Mask 操作是在 Self-Attention 进行 Softmax 之前进行的，具体做法是将要 M">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-19-GPT">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-19-GPT/index.html">
 <meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="框架GPT 使用 Transformer 的 Decoder 结构，并对 Transformer Decoder 进行了一些改动，原本的 Decoder 包含了两个 Multi-Head Attention 结构，GPT 只保留了 Mask Multi-Head Attention  Mask操作Mask 操作是在 Self-Attention 进行 Softmax 之前进行的，具体做法是将要 M">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-09-16T01:48:23.000Z">
-<meta property="article:modified_time" content="2020-09-16T01:48:46.804Z">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-19-GPT/NLPimg/gpt1.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-19-GPT/NLPimg/gpt2.jpeg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-19-GPT/NLPimg/gpt3.jpeg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-19-GPT/NLPimg/gpt4.jpg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-19-GPT/NLPimg/gpt5.jpg">
+<meta property="article:published_time" content="2020-09-16T02:15:32.000Z">
+<meta property="article:modified_time" content="2020-09-16T02:16:03.049Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-19-GPT/NLPimg/gpt1.png">
 
-<link rel="canonical" href="http://example.com/categories/">
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-19-GPT/">
 
 
 <script id="page-configurations">
@@ -38,13 +46,12 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>分类 | SHolic的博客
-</title>
+  <title>NLP-19-GPT | SHolic的博客</title>
   
 
 
@@ -146,51 +153,125 @@
       <div class="main-inner">
         <div class="content-wrap">
           
-  
-  
 
-          <div class="content page posts-expand">
+          <div class="content post posts-expand">
             
 
     
-    
-    
-    <div class="post-block" lang="zh-CN">
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-19-GPT/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
       <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-19-GPT
+        </h1>
 
-<h1 class="post-title" itemprop="name headline">分类
-</h1>
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
 
-<div class="post-meta">
+              <time title="创建时间：2020-09-16 10:15:32 / 修改时间：10:16:03" itemprop="dateCreated datePublished" datetime="2020-09-16T10:15:32+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="框架"><a href="#框架" class="headerlink" title="框架"></a>框架</h2><p>GPT 使用 Transformer 的 Decoder 结构，并对 Transformer Decoder 进行了一些改动，原本的 Decoder 包含了两个 Multi-Head Attention 结构，GPT 只保留了 Mask Multi-Head Attention</p>
+<p><img src="NLPimg\gpt1.png" alt="gpt1"></p>
+<h2 id="Mask操作"><a href="#Mask操作" class="headerlink" title="Mask操作"></a>Mask操作</h2><p>Mask 操作是在 Self-Attention 进行 Softmax 之前进行的，具体做法是将要 Mask 的位置用一个无穷小的数替换 -inf，然后再 Softmax，如下图所示。</p>
+<p><img src="NLPimg\gpt2.jpeg" alt="gpt2"></p>
+<p><img src="NLPimg\gpt3.jpeg" alt="gpt3"></p>
+<h2 id="预训练语言任务"><a href="#预训练语言任务" class="headerlink" title="预训练语言任务"></a>预训练语言任务</h2><p>给定句子$U=[u_1,u_2,\dots,u_n]$，GPT训练语言模型时需要最大化下面的似然函数</p>
+<script type="math/tex; mode=display">
+L_1(U)=\sum_i\log P(u_i|u_{i-k},\dots,u_{i-1};\Theta)</script><p>可以看到GPT是一个单向的模型，GPT的输入用$h_0$表示，$h_0$的计算公式如下</p>
+<script type="math/tex; mode=display">
+h_0=UW_e+W_p</script><p>$W_p$是单词位置的Embedding，$W_e$是单词的Embedding。用$voc$表示词汇表大小，$pos$表示最长的句子长度，$dim$表示Embedding维度，则$W_p$是一个$pos\times dim$的矩阵，$W_e$是一个$voc\times dim$的矩阵。</p>
+<p>得到输入$h_0$之后，需要将$h_0$依次传入GPT的所有Transformer Decoder里，最终得到$h_t$</p>
+<script type="math/tex; mode=display">
+h_t=transformer\_block(h_{l-1}),l\in[1,t]</script><p>最后得到$h_t$再预测下个单词的概率</p>
+<script type="math/tex; mode=display">
+P(u)=softmax(h_tW_e^T)</script><p>为了能够高效节省时间和内存的处理如此长的序列，做了一些Memory-Compressed的工作，主要是两方面：</p>
+<ul>
+<li>一方面是把一个batch内部的序列按长度进行分组，然后分别在每个组内部进行self-attention操作，这样可以避免将一些很短的句子也padding到整个语料的最大长度；</li>
+<li><p>另一方面，通过CNN的操作，把K和V压缩到序列长度更小的一个矩阵，同时保持Q不变，这样也能相当程度上减少计算量。</p>
+<p><img src="NLPimg\gpt4.jpg" alt="gpt4"></p>
+</li>
+</ul>
+<h2 id="下游任务fine-tuning"><a href="#下游任务fine-tuning" class="headerlink" title="下游任务fine-tuning"></a>下游任务fine-tuning</h2><p>GPT 经过预训练之后，会针对具体的下游任务对模型进行微调。微调的过程采用的是有监督学习，训练样本包括单词序列$[x_1,x_2,\dots,x_m]$和 类标$y$。GPT微调的过程中根据单词序列$[x_1,x2,\dots,x_m]$预测类标$y$</p>
+<script type="math/tex; mode=display">
+P(y|x^1,\dots,x^m)=softmax(h^m_lW_y)</script><p>$W_y$表示预测输出时的参数，微调时候需要最大化以下函数</p>
+<script type="math/tex; mode=display">
+L_2=\sum_{x,y}\log P(y|x^1,\dots,x^m)</script><p>GPT在微调的时候也考虑预训练的损失函数，所以最终需要优化的函数为：</p>
+<script type="math/tex; mode=display">
+L_3=L_2+\lambda L_1</script><p><img src="NLPimg\gpt5.jpg" alt="gpt5"></p>
+<ol>
+<li>对于分类问题，不用怎么动，加上一个起始和终结符号即可；</li>
+<li>对于句子关系判断问题，比如Entailment，两个句子中间再加个分隔符即可；</li>
+<li>对文本相似性判断问题，把两个句子顺序颠倒下做出两个输入即可，这是为了告诉模型句子顺序不重要；</li>
+<li>对于多项选择问题，则多路输入，每一路把文章和答案选项拼接作为输入即可。从上图可看出，这种改造还是很方便的，不同任务只需要在输入部分施工即可。 </li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-18-Transformer/" rel="prev" title="NLP-18-Transformer">
+      <i class="fa fa-chevron-left"></i> NLP-18-Transformer
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-20-BERT/" rel="next" title="NLP-20-BERT">
+      NLP-20-BERT <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
   
 
-</div>
-
-</header>
-
-      
-      
-      
-      <div class="post-body">
-          <div class="category-all-page">
-            <div class="category-all-title">
-              目前共计 1 个分类
-            </div>
-            <div class="category-all">
-              <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/">自然语言处理</a><span class="category-list-count">20</span></li></ul>
-            </div>
-          </div>
-        
-      </div>
-      
-      
-      
-    </div>
-    
-
-    
-    
-    
 
 
           </div>
@@ -241,6 +322,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%86%E6%9E%B6"><span class="nav-number">1.</span> <span class="nav-text">框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Mask%E6%93%8D%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">Mask操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%84%E8%AE%AD%E7%BB%83%E8%AF%AD%E8%A8%80%E4%BB%BB%E5%8A%A1"><span class="nav-number">3.</span> <span class="nav-text">预训练语言任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E6%B8%B8%E4%BB%BB%E5%8A%A1fine-tuning"><span class="nav-number">4.</span> <span class="nav-text">下游任务fine-tuning</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

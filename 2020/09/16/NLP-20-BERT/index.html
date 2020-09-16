@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="利用了真双向的Transformer 为了利用双向信息，改进了普通语言模型成为完形填空式的Mask-LM(Mask-Language Model) 利用Next Sentence Prediction任务学习句子级别信息 进一步完善和扩展了GPT中设计的通用任务框架，使得BERT能够支持包括：句子对分类任务、单句子分类任务、阅读理解任务和序列标注任务  框架BERT是Bidirectional">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-20-BERT">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-20-BERT/index.html">
+<meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="利用了真双向的Transformer 为了利用双向信息，改进了普通语言模型成为完形填空式的Mask-LM(Mask-Language Model) 利用Next Sentence Prediction任务学习句子级别信息 进一步完善和扩展了GPT中设计的通用任务框架，使得BERT能够支持包括：句子对分类任务、单句子分类任务、阅读理解任务和序列标注任务  框架BERT是Bidirectional">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-20-BERT/NLPimg/bert1.jpg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-20-BERT/NLPimg/bert3.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-20-BERT/NLPimg/bert4.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-20-BERT/NLPimg/bert2.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-20-BERT/NLPimg/bert5.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-20-BERT/NLPimg/bert6.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-20-BERT/NLPimg/bert7.png">
+<meta property="article:published_time" content="2020-09-16T02:16:18.000Z">
+<meta property="article:modified_time" content="2020-09-16T02:17:05.631Z">
+<meta property="article:author" content="sholic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-20-BERT/NLPimg/bert1.jpg">
+
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-20-BERT/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>NLP-20-BERT | SHolic的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">SHolic的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-20-BERT/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-20-BERT
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 10:16:18 / 修改时间：10:17:05" itemprop="dateCreated datePublished" datetime="2020-09-16T10:16:18+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ul>
+<li>利用了真双向的Transformer</li>
+<li>为了利用双向信息，改进了普通语言模型成为完形填空式的Mask-LM(Mask-Language Model)</li>
+<li>利用Next Sentence Prediction任务学习句子级别信息</li>
+<li>进一步完善和扩展了GPT中设计的通用任务框架，使得BERT能够支持包括：句子对分类任务、单句子分类任务、阅读理解任务和序列标注任务</li>
+</ul>
+<h2 id="框架"><a href="#框架" class="headerlink" title="框架"></a>框架</h2><p>BERT是Bidirectional Encoder Representations from Transformers的缩写，BERT是Transformer中的 Encoder。它由许多个Encoder堆叠而成</p>
+<p><img src="NLPimg\bert1.jpg" alt="bert1"></p>
+<h2 id="预训练语言任务"><a href="#预训练语言任务" class="headerlink" title="预训练语言任务"></a>预训练语言任务</h2><h3 id="词级别语义关系：Masked-Language-Model"><a href="#词级别语义关系：Masked-Language-Model" class="headerlink" title="词级别语义关系：Masked Language Model"></a>词级别语义关系：Masked Language Model</h3><p>步骤：</p>
+<ul>
+<li>输入序列依然和普通Transformer保持一致，只不过把挖掉的一个词用”[MASK]”替换</li>
+<li>Transformer的Encoder部分按正常进行</li>
+<li>输出层在被挖掉的词位置，接一个分类层做词典大小上的分类问题，得到被mask掉的词概率大小</li>
+</ul>
+<p>在Masked LM中，我们会把输入的句子中随机将15%的词汇置换为一个特殊的token，叫做[MASK]</p>
+<p>其实并不是所有被选中的词汇都会被替换为 [MASK]</p>
+<ul>
+<li>80%被替换为[MASK]，解决信息泄露问题</li>
+<li>10%被替换为随机token，模型的输出向量朝输入层的真实embedding有一个偏移</li>
+<li>10%不替换，迫使模型尽量在每一个词上都学习到一个全局语境下的表征，解决一词多义</li>
+</ul>
+<p>BERT的任务就是猜出这些被置换掉的词汇的什么</p>
+<p><img src="NLPimg\bert3.png" alt="bert3"></p>
+<p>经过BERT后我们得到一个embedding，再把置换为[MASK]的那个位置输出的embedding通过一个线性分类器，预测这个单词是什么</p>
+<h3 id="句子级别语义关系：Next-Sentence-Prediction"><a href="#句子级别语义关系：Next-Sentence-Prediction" class="headerlink" title="句子级别语义关系：Next Sentence Prediction"></a>句子级别语义关系：Next Sentence Prediction</h3><p>在Next Sentence Prediction中，我们给BERT两个句子，让BERT预测这两个句子是不是接在一起的</p>
+<p><img src="NLPimg\bert4.png" alt="bert4"></p>
+<ul>
+<li>[SEP]：特殊的token，代表两个句子的交界处</li>
+<li>[CLS]：特殊的token，代表要做分类 </li>
+</ul>
+<p>我们再把[CLS]输出的向量通过一个线性分类器，让分类器判断这两个句子应不应该接在一起。BERT是Transformer的Encoder，它用到了self-attention机制，可以读到句子的全部信息，所以[CLS]可以放在开头</p>
+<p>数据中有50%的情况这两个句子是先后关系，而另外50%的情况下，这两个句子是随机从语料中凑到一起的</p>
+<h3 id="Multi-task训练"><a href="#Multi-task训练" class="headerlink" title="Multi-task训练"></a>Multi-task训练</h3><p>BERT的损失函数由两部分组成</p>
+<ul>
+<li>第一部分是来自于Mask-LM的单词级别的分类任务</li>
+<li>另一部分是句子级别的分类任务，通过这两个任务的联合学习</li>
+</ul>
+<p>具体的损失函数如下：</p>
+<script type="math/tex; mode=display">
+L(\theta,\theta_1,\theta_2)=L_1(\theta,\theta_1)+L_2(\theta,\theta_2)</script><p>其中$\theta$是BERT中Encoder部分的参数，$\theta_1$是Mask-LM任务中在Encoder上所接的输出层中的参数，$\theta_2$则是句子预测任务中在Encoder上接上的分类器中的参数。</p>
+<script type="math/tex; mode=display">
+L_1(\theta,\theta_1)=-\sum_{i=1}^M\log p(m=m_i|\theta,\theta_1),m_i\in[1,2,\dots,|V|]</script><script type="math/tex; mode=display">
+L_2(\theta,\theta_2)=-\sum_{j=1}^N\log p(n=n_j|\theta,\theta_2),n_j\in[IsNext,NotNext]</script><p>BERT还利用了一系列策略，使得模型更易于训练，比如对于学习率的warm-up策略（和之前提到的ULMFiT以及Transformer中用到的技巧类似），使用的激活函数不再是普通的ReLu，而是GeLu，也是用了dropout等这些比较常见的训练技巧。 </p>
+<h2 id="下游任务fine-tuning"><a href="#下游任务fine-tuning" class="headerlink" title="下游任务fine-tuning"></a>下游任务fine-tuning</h2><p>为了适应各种场景，需要通用输入输出层</p>
+<h3 id="BERT输入"><a href="#BERT输入" class="headerlink" title="BERT输入"></a>BERT输入</h3><p>在BERT中</p>
+<ul>
+<li>起始标记都用“[CLS]”来表示，结束标记符用”[SEP]”表示</li>
+<li>对于两个句子的输入情况，除了起始标记和结束标记之外，两个句子间通过”[SEP]”来进行区分。</li>
+<li>用了两个表示当前是句子A还是句子B的向量来进行表示，对于句子A来说，每一词都会添加一个同样的表示当前句子为句子A的向量，相应的，如果有句子B的话，句子B中的每一个词也都会添加一个表示当前句子为句子B的向量。</li>
+<li>为了引入序列中词的位置信息，也用了position embedding</li>
+</ul>
+<p><img src="NLPimg\bert2.png" alt="bert2"></p>
+<p>如上图所处，BERT的输入embedding是token embeddings、segment embeddings和position embedding的和</p>
+<ul>
+<li>token embedding：词向量</li>
+<li>segment embedding：表示句子是第一句还是第二句</li>
+<li>position embedding：表示词汇在句子中的位置</li>
+</ul>
+<h3 id="BERT输出"><a href="#BERT输出" class="headerlink" title="BERT输出"></a>BERT输出</h3><p>BERT主要针对四类任务考虑和设计了一些非常易于移植的输出层</p>
+<ul>
+<li>单个序列文本分类任务（单句做encoder，第一个输出作分类预测）</li>
+<li>两个序列文本分类任务（句子对做encoder，第一个输出作分类预测）</li>
+<li>阅读理解任务（只需对每一个位置预测是否为start和是否为end）和序列标注任务(对每一位置多分类预测)</li>
+<li>句子或答案选择任务（分解为多个句子对encoder，一起全连接到二分类）</li>
+</ul>
+<p><img src="NLPimg\bert5.png" alt="bert5"></p>
+<h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><ul>
+<li>特征提取器，只训练全连接<ul>
+<li>将预训练模型当做一个特征提取器，直接将预训练模型的输出层去掉，然后使用去掉输出层之后的最后一层输出作为特征输入到我们自己精心设计好的Task-specific模型中去，在训练过程中，作为特征提取器的部分（比如BERT Encoder）的参数是不变的。另外，特征提取器并不一定只能用最后一层的输出向量，也可以使用中间的某些层，甚至也可以借鉴ELMo的做法，在各层之间利用一个softmax来学习各自的权值，或者也可以尝试一些更为复杂的各层组合方式；</li>
+</ul>
+</li>
+<li>预训练模型与全连接一起训练<ul>
+<li>将预训练模型整体接入Task-specific模型，继而重新在新的数据集上整体重新训练，当然训练技巧可以有很多种，比如ULMFiT的三角学习率和逐层解冻或者是Transformer的warmup策略（上文都有提到），这些训练技巧非常重要，需要好好把控，否则很容易学崩了，甚至让原有预训练语言模型的优势都被新的finetune抹去了，因此需要实验设计一个比较好的finetune策略。此外，和特征提取器的接入方式类似，预训练模型的接入不一定只能接最后层的输出，可以尝试更复杂的接入方式，比如DenseNet；</li>
+</ul>
+</li>
+<li>训练部分预训练模型和全连接<ul>
+<li>和上面两种极端情况相反，或者说综合了上面两种方式的方案，即保留预训练模型的一部分，另外一部分则和Task-specific模型一起finetune，在某些情况下，这可能是个比较合理的选择，比如预训练模型比较深（NLP模型通常来讲比CV模型都要浅很多），以及训练数据不算太多的情况，这个时候一方面要保证预训练模型在大规模语料上曾经学习到的表征，另一方面因为又要做新数据下的迁移，但是数据量比较少，重新finetune整个模型可能不太合适，容易导致模型的鲁棒性不高，那么似乎选择最后的一些层进行选择性的finetune会是比较好的方案。</li>
+</ul>
+</li>
+</ul>
+<h2 id="GPT与BERT对比"><a href="#GPT与BERT对比" class="headerlink" title="GPT与BERT对比"></a>GPT与BERT对比</h2><p><img src="NLPimg\bert6.png" alt="bert6"><img src="NLPimg\bert7.png" alt="bert7"></p>
+<ul>
+<li>GPT因为采用了传统语言模型所以更加适合用于自然语言生成类的任务(NLG)，因为这些任务通常是根据当前信息生成下一刻的信息。而BERT更适合用于自然语言理解任务(NLU) </li>
+<li>GPT 采用了Transformer的Decoder，而BERT采用了Transformer的Encoder。GPT使用Decoder中的Mask Multi-Head Attention结构，在使用$[u_1,u_2,\dots,u_{i-1}]$预测单词$u_i$的时候，会将$u_i$之后的单词Mask掉。 </li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-19-GPT/" rel="prev" title="NLP-19-GPT">
+      <i class="fa fa-chevron-left"></i> NLP-19-GPT
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%86%E6%9E%B6"><span class="nav-number">1.</span> <span class="nav-text">框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%84%E8%AE%AD%E7%BB%83%E8%AF%AD%E8%A8%80%E4%BB%BB%E5%8A%A1"><span class="nav-number">2.</span> <span class="nav-text">预训练语言任务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%8D%E7%BA%A7%E5%88%AB%E8%AF%AD%E4%B9%89%E5%85%B3%E7%B3%BB%EF%BC%9AMasked-Language-Model"><span class="nav-number">2.1.</span> <span class="nav-text">词级别语义关系：Masked Language Model</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%A5%E5%AD%90%E7%BA%A7%E5%88%AB%E8%AF%AD%E4%B9%89%E5%85%B3%E7%B3%BB%EF%BC%9ANext-Sentence-Prediction"><span class="nav-number">2.2.</span> <span class="nav-text">句子级别语义关系：Next Sentence Prediction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Multi-task%E8%AE%AD%E7%BB%83"><span class="nav-number">2.3.</span> <span class="nav-text">Multi-task训练</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E6%B8%B8%E4%BB%BB%E5%8A%A1fine-tuning"><span class="nav-number">3.</span> <span class="nav-text">下游任务fine-tuning</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#BERT%E8%BE%93%E5%85%A5"><span class="nav-number">3.1.</span> <span class="nav-text">BERT输入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BERT%E8%BE%93%E5%87%BA"><span class="nav-number">3.2.</span> <span class="nav-text">BERT输出</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%94%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">应用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPT%E4%B8%8EBERT%E5%AF%B9%E6%AF%94"><span class="nav-number">5.</span> <span class="nav-text">GPT与BERT对比</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sholic</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sholic</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

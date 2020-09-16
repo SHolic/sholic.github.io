@@ -150,6 +150,1160 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-10-%E6%9D%A1%E4%BB%B6%E9%9A%8F%E6%9C%BA%E5%9C%BACRF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/16/NLP-10-%E6%9D%A1%E4%BB%B6%E9%9A%8F%E6%9C%BA%E5%9C%BACRF/" class="post-title-link" itemprop="url">NLP-10-条件随机场CRF</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 09:44:34 / 修改时间：10:11:53" itemprop="dateCreated datePublished" datetime="2020-09-16T09:44:34+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><p><strong>CRF与HMM区别</strong></p>
+<p><img src="NLPimg\crf1.jpg" alt="crf1"></p>
+<ul>
+<li><p>HMM不知道隐藏状态，CRF知道隐藏状态</p>
+</li>
+<li><p>HMM隐藏状态只依赖前一个隐藏状态，CRF隐藏状态可以依赖上下文（Ngram），linear_CRF依赖前一个隐藏状态</p>
+</li>
+<li><p>HMM的隐藏状态转移概率是规范化的（和等于1），CRF隐藏状态转移概率是非规范化的（权重乘以1或0）</p>
+</li>
+<li><p>HMM是生成模型（未知隐藏状态），求解联合分布$P(x,y)$，CRF是判别模型（已知隐藏状态），求解条件概率$P(y|x)$</p>
+</li>
+</ul>
+<p><strong>CRF定义</strong></p>
+<p>linear_CRF数学定义：</p>
+<p>设$X=(X_1,X_2,\ldots,X_n),Y=(Y_1,Y_2,\ldots,Y_n)$均为线性链表示的随机变量序列，在给定随机变量序列$X$的情况下，随机变量$Y$的条件概率分布$P(Y|X)$构成条件随机场，即满足马尔科夫性：</p>
+<script type="math/tex; mode=display">
+P(Y_i|X,Y_1,Y_2,\ldots,Y_n)=P(Y_i|X,Y_{i-1},Y_{i+1})</script><p>两类特征 ：</p>
+<script type="math/tex; mode=display">
+s_l(y_i,x,i),l=1,2,\ldots,L</script><script type="math/tex; mode=display">
+t_k(y_{i-1},y_i,x,i),k=1,2,\ldots,K</script><p>假设$t_k$的权重系数是$\lambda_k$，$s_l$的权重系数是$\mu_l$，此时我们得到了linear-CRF的<strong>参数化形式</strong>如下：</p>
+<script type="math/tex; mode=display">
+P(y|x)=\frac{1}{Z(x)}\exp(\sum_{i,k}\lambda_kt_k(y_{i-1},y_i,x,i)+\sum_{i,l}\mu_ls_l(y_i,x,i))</script><script type="math/tex; mode=display">
+Z(x)=\sum_y\exp(\sum_{i,k}\lambda_kt_k(y_{i-1},y_i,x,i)+\sum_{i,l}\mu_ls_l(y_i,x,i))</script><p>统一特征：</p>
+<script type="math/tex; mode=display">
+f_k(y_{i-1},y_i,x,i)=\begin{cases}t_k(y_{i-1},y_i,x,i)&k=1,2,\ldots,K_1\\s_l(y_i,x,i)&k=K_1+l,l=1,2,\ldots,K_2\end{cases}</script><script type="math/tex; mode=display">
+f_k(y,x)=\sum_{i=1}^nf_k(y_{i-1},y_i,x,i)</script><script type="math/tex; mode=display">
+w_k=\begin{cases}\lambda_k&k=1,2,\ldots,K_1\\\mu_l&k=K_1+l,l=1,2,\ldots,K_2\end{cases}</script><p>这样，我们的linear-CRF的<strong>参数化形式简化</strong>为 ：</p>
+<script type="math/tex; mode=display">
+P(y|x)=\frac{1}{Z(x)}\exp\sum_{k=1}^Kw_kf_k(y,x)</script><script type="math/tex; mode=display">
+Z(x)=\sum_y\exp(\sum_{k=1}^Kw_kf_k(y,x))</script><p>如果将上两式中的$w_k$与$f_k$的用向量表示，即：</p>
+<script type="math/tex; mode=display">
+w=(w_1,w_2,\ldots,w_K)^T\\F(y,x)=(f_1(y,x),f_2(y,x),\ldots,f_K(y,x))^T</script><p>则linear-CRF的参数化形式简化为<strong>内积形式</strong>如下： </p>
+<script type="math/tex; mode=display">
+P_w(y|x)=\frac{\exp(w\cdot F(y,x))}{Z_w(x)}=\frac{\exp(w\cdot F(y,x))}{\sum_y\exp(w\cdot F(y,x))}</script><p>定义一个$m\times m$的矩阵$M$，$m$为$y$所有可能的状态的取值个数。$M$定义如下：</p>
+<script type="math/tex; mode=display">
+M_i(x)=\begin{bmatrix}M_i(y_{i-1},y_i|x)\end{bmatrix}=\begin{bmatrix}\exp(W_i(y_{i-1},y_i|x))\end{bmatrix}=\begin{bmatrix}\exp(\sum_{k=1}^Kw_kf_k(y_{i-1},y_i,x,i))\end{bmatrix}</script><p> 引入起点和终点标记$y_0=start,y_{n+1}=stop$，linear-CRF的参数化形式简化为<strong>矩阵形式</strong>如下：</p>
+<script type="math/tex; mode=display">
+P_w(y|x)=\frac{1}{Z_w(x)}\prod_{i=1}^{n+1}M_i(y_{i-1},y_i|x)</script><p><strong>三个问题</strong></p>
+<p>和HMM一样，同样有三个问题。</p>
+<ul>
+<li>评估——前后向算法</li>
+<li>学习——梯度下降，牛顿法，拟牛顿法</li>
+<li>解码——维特比算法</li>
+</ul>
+<h3 id="评估观测序列概率"><a href="#评估观测序列概率" class="headerlink" title="评估观测序列概率"></a>评估观测序列概率</h3><p>定义$\alpha_i(y_i|x)$表示序列位置$i$的标记是$y_i$时，在位置$i$之前的部分标记序列的非规范化概率。 </p>
+<p>定义$\beta_i(y_i|x)$表示序列位置ii的标记是$y_i$时，在位置$i$之后的从$i+1$到$n$的部分标记序列的非规范化概率。 </p>
+<script type="math/tex; mode=display">
+\alpha_0(y_0|x)=\begin{cases}1&y_0=start\\0&else\end{cases}</script><script type="math/tex; mode=display">
+\beta_{n+1}(y_{n+1}|x)=\begin{cases}1&y_{n+1}=stop\\0&else\end{cases}</script><p>递推公式：</p>
+<script type="math/tex; mode=display">
+\alpha_{i+1}(y_{t+1}|x)=\alpha_i(y_i|x)M_{i+1}(y_{i+1},y_i|x),i=1,2,\ldots,n+1</script><script type="math/tex; mode=display">
+\beta_i(y_i|x)=M_{i+1}(y_i,y_{i+1}|x)\beta_{i+1}(y_{i+1}|x)</script><p>假设我们可能的标记总数是$m$，则$y_i$的取值就有$m$个，我们用$\alpha_i(x),\beta_i(x)$向量形式如下：</p>
+<script type="math/tex; mode=display">
+\alpha_i(x)=(\alpha_i(y_i=1|x),\alpha_i(y_i=2|x),\ldots,\alpha_i(y_i=m|x))^T</script><script type="math/tex; mode=display">
+\beta_i(x)=(\beta_i(y_i=1|x),\beta_i(y_i=2|x),\ldots,\beta_i(y_i=m|x))^T</script><p> 同时用矩阵$M_i(x)$表示由$M_i(y_{i−1},y_i|x)$形成的$m\times m$阶矩阵： </p>
+<script type="math/tex; mode=display">
+M_i(x)=\begin{bmatrix}M_i(y_{i-1},y_i|x)\end{bmatrix}</script><p>递推公式矩阵形式：</p>
+<script type="math/tex; mode=display">
+\alpha_{i+1}^T(x)=\alpha_i^T(x)M_{i+1}(x)</script><script type="math/tex; mode=display">
+\beta_i(x)=M_{i+1}(x)\beta_{i+1}(x)</script><p>概率计算：</p>
+<script type="math/tex; mode=display">
+P(y_i|x)=\frac{\alpha_i^T(y_i|x)\beta_i(y_i|x)}{Z(x)}=\frac{\alpha_i^T(y_i|x)\beta_i(y_i|x)}{\alpha_n^T(x)\cdot\vec 1}</script><script type="math/tex; mode=display">
+P(y_{i-1},y_i|x)=\frac{\alpha_{i-1}^T(y_{i-1}|x)M_i(y_{i-1},y_i|x)\beta_i(y_i|x)}{Z(x)}=\frac{\alpha_{i-1}^T(y_{i-1}|x)M_i(y_{i-1},y_i|x)\beta_i(y_i|x)}{\alpha_n^T(x)\cdot\vec 1}</script><h3 id="模型参数学习问题"><a href="#模型参数学习问题" class="headerlink" title="模型参数学习问题"></a>模型参数学习问题</h3><p>使用梯度下降法求解模型参数</p>
+<p> 一般极大化条件分布$P_w(y|x)$的对数似然函数如下 ：</p>
+<script type="math/tex; mode=display">
+L(w)=\log\prod_{x,y}P_w(y|x)^{\overline P(x,y)}=\sum_{x,y}\overline P(x,y)\log P_w(y|x)</script><script type="math/tex; mode=display">
+f(w)=-L(w)=\sum_x\overline P(x)\log\sum_y\exp\sum_{k=1}^Kw_kf_k(x,y)-\sum_{x,y}\overline P(x,y)\sum_{k=1}^Kw_kf_k(x,y)</script><script type="math/tex; mode=display">
+\frac{\partial f(w)}{\partial w}=\sum_{x,y}\overline P(x)P_w(y|x)f(x,y)-\sum_{x,y}\overline P(x,y)f(x,y)</script><script type="math/tex; mode=display">
+\hat w=w-\alpha\frac{\partial f(w)}{\partial w}</script><h3 id="预测问题"><a href="#预测问题" class="headerlink" title="预测问题"></a>预测问题</h3><p>与HMM类似，用维特比算法求解，在算法中详细讲解</p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><p>输入：模型的$K$个特征函数，和对应的$K$个权重。观测序列$x=(x_1,x_2,\ldots,x_n)$，可能的标记个数$m$</p>
+<p>输出：最优标记序列$y^<em>=(y^</em>_1,y^<em>_2,\ldots,y^</em>_n)$</p>
+<ol>
+<li>初始化：</li>
+</ol>
+<script type="math/tex; mode=display">
+\delta_1(l)=\sum_{k=1}^Kw_kf_k(y_0=start,y_1=l,x,i),l=1,2,\ldots,m</script><script type="math/tex; mode=display">
+\Psi_1(l)=start,l=1,2,\ldots,m</script><ol>
+<li>对于$i=1,2,\ldots,n−1$，进行递推：</li>
+</ol>
+<script type="math/tex; mode=display">
+\delta_{i+1}(l)=\max_{1\le j\le m}\lbrace\delta_i(j)+\sum_{k=1}^Kw_kf_k(y_i=j,y_{i+1}=l,x,i)\rbrace,l=1,2,\ldots,m</script><script type="math/tex; mode=display">
+\Psi_{i+1}(l)=\arg\max_{1\le j\le m}\lbrace\delta_i(j)+\sum_{k=1}^Kw_kf_k(y_i=j,y_{i+1}=l,x,i)\rbrace,l=1,2,\ldots,m</script><ol>
+<li>终止：</li>
+</ol>
+<script type="math/tex; mode=display">
+y^*_n=\arg\max_{1\le j\le m}\delta_n(j)</script><ol>
+<li>回溯：</li>
+</ol>
+<script type="math/tex; mode=display">
+y^*_i=\Psi_{i+1}(y^*_{i+1}),i=n−1,n−2,\ldots,1</script><p>最终得到最优标记序列$y^<em>=(y^</em>_1,y^<em>_2,\ldots,y^</em>_n)$</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/" class="post-title-link" itemprop="url">NLP-09-隐式马尔科夫链HMM</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 09:41:24 / 修改时间：10:11:21" itemprop="dateCreated datePublished" datetime="2020-09-16T09:41:24+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><p><strong>HMM模型特征</strong></p>
+<ol>
+<li>问题是基于序列的，比如时间序列，或者状态序列。</li>
+<li>问题中有两类数据，一类序列数据是可以观测到的，即观测序列；而另一类数据是不能观察到的，即隐藏状态序列，简称状态序列。 </li>
+</ol>
+<p><strong>HMM定义</strong></p>
+<p><img src="NLPimg\hmm3.jpg" alt="hmm3"></p>
+<p>假设$Q=\lbrace q_1,q_2,\ldots,q_N\rbrace$是所有可能的隐藏状态的集合，$V=\lbrace v_1,v_2,\ldots,v_M\rbrace$ 是所有可能的观测状态的集合</p>
+<p>对于一个长度为$T$的序列，$I=\lbrace i_1,i_2,\ldots,i_T\rbrace$是对应的状态序列，$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$是对应的观察序列 </p>
+<p>齐次马尔科夫链假设。即任意时刻的隐藏状态只依赖于它前一个隐藏状态 :</p>
+<script type="math/tex; mode=display">
+a_{ij}=P(i_{t+1}=q_j|i_t=q_i)</script><script type="math/tex; mode=display">
+A=\begin{bmatrix}a_{ij}\end{bmatrix}_{N\times N}</script><p>观测独立性假设。即任意时刻的观察状态只仅仅依赖于当前时刻的隐藏状态 </p>
+<script type="math/tex; mode=display">
+b_j(k)=P(o_t=v_k|i_t=q_j)</script><script type="math/tex; mode=display">
+B=\begin{bmatrix}b_j(k)\end{bmatrix}_{N\times M}</script><p> 在时刻$t=1$的隐藏状态概率分布$\Pi$</p>
+<script type="math/tex; mode=display">
+\pi(i)=P(i_1=q_i)</script><script type="math/tex; mode=display">
+\Pi=\begin{bmatrix}\pi(i)\end{bmatrix}_N</script><p><strong>三个问题</strong></p>
+<ol>
+<li>评估观察序列概率。即给定模型$\lambda=(A,B,\Pi)$和观测序列$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$，计算在模型$\lambda$下观测序列$O$出现的概率$P(O|\lambda)$。这个问题的求解需要用到前向后向算法。这个问题是HMM模型三个问题中最简单的。</li>
+<li>模型参数学习问题。即给定观测序列$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$，估计模型$\lambda=(A,B,\Pi)$的参数，使该模型下观测序列的条件概率$P(O|\lambda)$最大。这个问题的求解需要用到基于EM算法的鲍姆-韦尔奇算法。这个问题是HMM模型三个问题中最复杂的。</li>
+<li>预测问题，也称为解码问题。即给定模型$\lambda=(A,B,\Pi)$和观测序列$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$，求给定观测序列条件下，最可能出现的对应的状态序列，这个问题的求解需要用到基于动态规划的维特比算法。这个问题是HMM模型三个问题中复杂度居中的算法。</li>
+</ol>
+<h3 id="评估观察序列概率"><a href="#评估观察序列概率" class="headerlink" title="评估观察序列概率"></a>评估观察序列概率</h3><p><strong>暴力求解</strong></p>
+<script type="math/tex; mode=display">
+P(O|\lambda)=\sum_IP(O,I|\lambda)=\sum_{i_1,i_2,\ldots,i_T}\pi_{i_1}b_{i_1}(o_1)a_{i_1 i_2}b_{i_2}(o_2)\ldots a_{i_{T-1} i_T}b_{i_T}(o_T)</script><p><strong>前后向算法求解</strong></p>
+<p>$\alpha_T(i)$表示在时刻$T$观测序列为$o_1,o_2,\ldots,o_T$，并且时刻$T$隐藏状态$q_i$的概率</p>
+<script type="math/tex; mode=display">
+\alpha_{t+1}(i)=\Big[\sum_{j=1}^N\alpha_t(j)a_{ji}\Big]b_i(o_{t+1}),i=1,2,\ldots,N</script><p><img src="NLPimg\hmm1.png" alt="hmm1"></p>
+<p>$\beta_t(i)$表示在时刻$t+1$到最后时刻$T$观测序列为$o_{t+1},o_{t+2},\ldots,o_T$，并且时刻$t$隐藏状态$q_i$的概率</p>
+<script type="math/tex; mode=display">
+\beta_{t}(i)=\sum_{j=1}^Na_{ij}b_j(o_{t+1})\beta_{t+1}(j),i=1,2,\ldots,N</script><p><img src="NLPimg\hmm2.png" alt="hmm2"></p>
+<p><strong>常用概率计算</strong></p>
+<ol>
+<li>给定模型$\lambda$和观测序列$O$,在时刻$t$处于状态$q_i$的概率记为：</li>
+</ol>
+<script type="math/tex; mode=display">
+\gamma_t(i)=P(i_t=q_i|O,\lambda)=\frac{P(i_t=q_i,O|\lambda)}{P(O|\lambda)}=\frac{\alpha_t(i)\beta_t(i)}{\sum_{j=1}^N\alpha_t(j)\beta_t(j)}</script><ol>
+<li>给定模型$\lambda$和观测序列$O$,在时刻$t$处于状态$q_i$，且时刻$t+1$处于状态$q_j$的概率记为：</li>
+</ol>
+<script type="math/tex; mode=display">
+\xi_t(i,j)=P(i_t=q_i,i_{t+1}=q_j|O,\lambda)=\frac{P(i_t=q_i,i_{t+1}=q_j,O|\lambda)}{P(O|\lambda)}=\frac{\alpha_t(i)a_{ij}b_j(o_{t+1})\beta_{t+1}(j)}{\sum_{r=1}^N\sum_{s=1}^N\alpha_t(r)a_{rs}b_s(o_{t+1})\beta_{t+1}(s)}</script><ol>
+<li><p>将$\gamma_t(i)$和$\xi_t(i,j)$在各个时刻$t$求和，可以得到： </p>
+<p>在观测序列$O$下状态$i$出现的期望值$\sum_{t=1}^T\gamma_t(i)$</p>
+<p>在观测序列$O$下由状态$i$转移的期望值$\sum_{t=1}^{T-1}\gamma_t(i)$</p>
+<p>在观测序列$O$下由状态$i$转移到状态$j$的期望值$\sum_{t=1}^{T−1}\xi_t(i,j)$</p>
+</li>
+</ol>
+<h3 id="模型参数学习问题"><a href="#模型参数学习问题" class="headerlink" title="模型参数学习问题"></a>模型参数学习问题</h3><p><strong>已知隐藏状态序列</strong></p>
+<p>用最大似然求解</p>
+<p>假设样本从隐藏状态$q_i$转移到$q_j$的频率计数是$A_{ij}$,那么状态转移矩阵求得为：</p>
+<script type="math/tex; mode=display">
+A=\begin{bmatrix}a_{ij}\end{bmatrix}，其中a_{ij}=\frac{A_{ij}}{\sum_{s=1}^NA_{is}}</script><p>假设样本隐藏状态为$q_j$且观测状态为$v_k$的频率计数是$B_{jk}$,那么观测状态概率矩阵为： </p>
+<script type="math/tex; mode=display">
+B=\begin{bmatrix}b_j(k)\end{bmatrix}，其中b_j(k)=\frac{B_{jk}}{\sum_{s=1}^MB_{js}}</script><p>假设所有样本中初始隐藏状态为$q_i$的频率计数为$C(i)$，那么初始概率分布为：</p>
+<script type="math/tex; mode=display">
+\Pi=\pi(i)=\frac{C(i)}{\sum_{s=1}^NC(s)}</script><p><strong>未知隐藏状态序列</strong></p>
+<p>用鲍姆-韦尔奇算法，即EM算法 </p>
+<p>E步</p>
+<script type="math/tex; mode=display">
+L(\lambda,\overline\lambda)=\sum_IP(I|O,\overline\lambda)\log P(O,I|\lambda)</script><p>M步</p>
+<script type="math/tex; mode=display">
+\overline\lambda=arg\max_\lambda\sum_IP(I|O,\overline\lambda)\log P(O,I|\lambda)</script><p>由$P(I|O,\overline\lambda)\propto P(O,I|\overline\lambda)$和$\sum_{i=1}^N\pi_i=1$，通过拉格朗日乘子法，再通过上节的常用概率计算，推导出：</p>
+<script type="math/tex; mode=display">
+\pi_i=\frac{\sum_{d=1}^D\gamma_1^{(d)}(i)}{D}</script><script type="math/tex; mode=display">
+a_{ij}=\frac{\sum_{d=1}^D\sum_{t=1}^{T-1}\xi_t^{(d)}(i,j)}{\sum_{d=1}^D\sum_{t=1}^{T-1}\gamma_t^{(d)}(i)}</script><script type="math/tex; mode=display">
+b_j(k)=\frac{\sum_{d=1}^D\sum_{t=1,o_t^{(d)}=v_k}^T\gamma_t^{(d)}(j)}{\sum_{d=1}^D\sum_{t=1}^T\gamma_t^{(d)}(j)}</script><h3 id="预测问题"><a href="#预测问题" class="headerlink" title="预测问题"></a>预测问题</h3><p>对可能出现的对应的状态序列$I^∗=\lbrace i^∗_1,i^∗_2,\ldots,i^∗_T\rbrace$，用维特比算法近似$P(I^*|O)$</p>
+<p>第一个局部状态是在时刻$t$隐藏状态为$i$所有可能的状态转移路径$i_1,i_2,\ldots,i_t$中的概率最大值。记为$\delta t(i)$: </p>
+<script type="math/tex; mode=display">
+\delta_t(t)=\max_{i_1,i_2,\ldots,i_{t-1}}P(i_t=i,i_1,i_2,\ldots,o_t,o_{t-1},\ldots,o_1|\lambda)，i=1,2,\ldots,N</script><script type="math/tex; mode=display">
+\delta_{t+1}(i)=\max_{1\le j\le N}\begin{bmatrix}\delta_t(j)a_{ji}\end{bmatrix}b_i(o_{t+1})</script><p>第二个局部状态由第一个局部状态递推得到。我们定义在时刻$t$隐藏状态为$i$的所有单个状态转移路径$(i_1,i_2,\ldots,i_{t−1},i)$中概率最大的转移路径中第$t−1$个节点的隐藏状态为$\psi_t(i)$，其递推表达式可以表示为： </p>
+<script type="math/tex; mode=display">
+\Psi_t(i)=arg\max_{1\le j\le N}\begin{bmatrix}\delta_{t-1}(j)a_{ji}\end{bmatrix}</script><p>有了这两个局部状态，我们就可以从时刻0一直递推到时刻$T$，然后利用$\psi_t(i)$记录的前一个最可能的状态节点回溯，直到找到最优的隐藏状态序列。 </p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><h3 id="前后向算法"><a href="#前后向算法" class="headerlink" title="前后向算法"></a>前后向算法</h3><p><strong>前向算法</strong></p>
+<p>输入：HMM模型$\lambda=(A,B,\Pi)$，观测序列$O=(o_1,o_2,\ldots,o_T)$</p>
+<p>输出：观测序列概率$P(O|\lambda)$</p>
+<ol>
+<li>计算时刻1的各个隐藏状态前向概率：</li>
+</ol>
+<script type="math/tex; mode=display">
+\alpha_1(i)=\pi_ib_i(o_1)，i=1,2,\ldots,N</script><ol>
+<li>递推时刻$2,3,\ldots,T$时刻的前向概率：</li>
+</ol>
+<script type="math/tex; mode=display">
+\alpha_{t+1}(i)=\begin{bmatrix}\sum_{j=1}^N\alpha_t(j)a_{ji}\end{bmatrix}b_i(o_{t+1})，i=1,2,\ldots,N</script><ol>
+<li>计算最终结果：</li>
+</ol>
+<script type="math/tex; mode=display">
+P(O|\lambda)=\sum_{i=1}^N\alpha_T(i)</script><p><strong>后向算法</strong></p>
+<p>输入：HMM模型$\lambda=(A,B,\Pi)$，观测序列$O=(o_1,o_2,\ldots,o_T)$</p>
+<p>输出：观测序列概率$P(O|\lambda)$</p>
+<ol>
+<li>初始化时刻$T$的各个隐藏状态后向概率：</li>
+</ol>
+<script type="math/tex; mode=display">
+\beta_T(i)=1,i=1,2,\ldots,N</script><ol>
+<li>递推时刻$T−1,T−2,\ldots,1$时刻的后向概率：</li>
+</ol>
+<script type="math/tex; mode=display">
+\beta_{t}(i)=\sum_{j=1}^Na_{ij}b_j(o_{t+1})\beta_{t+1}(j),i=1,2,\ldots,N</script><ol>
+<li>计算最终结果：</li>
+</ol>
+<script type="math/tex; mode=display">
+P(O|\lambda)=\sum_{i=1}^N\pi_ib_i(o_1)\beta_1(i)</script><h3 id="鲍姆-韦尔奇算法"><a href="#鲍姆-韦尔奇算法" class="headerlink" title="鲍姆-韦尔奇算法"></a>鲍姆-韦尔奇算法</h3><p>输入： $D$个观测序列样本$\lbrace (O_1),(O_2),\ldots,(O_D)\rbrace$</p>
+<p>输出：HMM模型参数</p>
+<ol>
+<li><p>随机初始化所有的$\pi_i,a_{ij},b_j(k)$</p>
+</li>
+<li><p>对于每个样本$d=1,2,\ldots,D$，用前向后向算法计算$\gamma^{(d)}_t(i)，\xi^{(d)}_t(i,j)，t=1,2,\ldots,T$</p>
+</li>
+<li><p>更新模型参数：</p>
+</li>
+</ol>
+<script type="math/tex; mode=display">
+\pi_i=\frac{\sum_{d=1}^D\gamma_1^{(d)}(i)}{D}</script><script type="math/tex; mode=display">
+a_{ij}=\frac{\sum_{d=1}^D\sum_{t=1}^{T-1}\xi_t^{(d)}(i,j)}{\sum_{d=1}^D\sum_{t=1}^{T-1}\gamma_t^{(d)}(i)}</script><script type="math/tex; mode=display">
+b_j(k)=\frac{\sum_{d=1}^D\sum_{t=1,o_t^{(d)}=v_k}^T\gamma_t^{(d)}(j)}{\sum_{d=1}^D\sum_{t=1}^T\gamma_t^{(d)}(j)}</script><ol>
+<li>如果$\pi_i,a_{ij},b_j(k)$的值已经收敛，则算法结束，否则回到第2步继续迭代。</li>
+</ol>
+<h3 id="维特比算法"><a href="#维特比算法" class="headerlink" title="维特比算法"></a>维特比算法</h3><p>输入：HMM模型$\lambda=(A,B,\Pi)$，观测序列$O=(o_1,o_2,\ldots,o_T)$</p>
+<p>输出：最有可能的隐藏状态序列$I^<em>=\lbrace i^</em>_1,i^<em>_2,\ldots,i^</em>_T\rbrace$</p>
+<ol>
+<li>初始化局部状态：</li>
+</ol>
+<script type="math/tex; mode=display">
+\delta_1(i)=\pi_ib_i(o_1)，i=1,2,\ldots,N</script><script type="math/tex; mode=display">
+\Psi_t(i)=0，i=1,2,\ldots,N</script><ol>
+<li>进行动态规划递推时刻$t=2,3,\ldots,T$时刻的局部状态：</li>
+</ol>
+<script type="math/tex; mode=display">
+\delta_t(i)=\max_{1\le j\le N}\begin{bmatrix}\delta_{t-1}(j)a_{ji}\end{bmatrix}b_i(o_t)</script><script type="math/tex; mode=display">
+\Psi_t(i)=arg\max_{1\le j\le N}\begin{bmatrix}\delta_{t-1}(j)a_{ji}\end{bmatrix}</script><ol>
+<li>计算时刻$T$最大的$\delta_T(i)$，即为最可能隐藏状态序列出现的概率。计算时刻$T$最大的$\Psi_t(i)$，即为时刻$T$最可能的隐藏状态。</li>
+</ol>
+<script type="math/tex; mode=display">
+P^*=\max_{1\le j\le N}\delta_T(i)</script><script type="math/tex; mode=display">
+i^*_T=arg\max_{1\le j\le N}\begin{bmatrix}\delta_T(i)\end{bmatrix}</script><ol>
+<li>利用局部状态$\Psi(i)$开始回溯。对于$t=T−1,T−2,…,1$：</li>
+</ol>
+<script type="math/tex; mode=display">
+i^*_T=\Psi_{t+1}(i^*_{t+1})</script><p>最终得到最有可能的隐藏状态序列$I^<em>=\lbrace i^</em>_1,i^<em>_2,\ldots,i^</em>_T\rbrace$</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/" class="post-title-link" itemprop="url">NLP-08-文本主题模型LDA</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 09:39:51 / 修改时间：10:11:15" itemprop="dateCreated datePublished" datetime="2020-09-16T09:39:51+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="pLSA与LDA差别及要点"><a href="#pLSA与LDA差别及要点" class="headerlink" title="pLSA与LDA差别及要点"></a>pLSA与LDA差别及要点</h3><ul>
+<li>pLSA是频率学派的，LDA是贝叶斯学派的，LDA为pLSA的两个参数$p(\omega|z)$和$p(z|d)$加了先验分布，即Dirichlet分布。</li>
+<li>pLSA跟LDA的本质区别就在于它们去估计未知参数所采用的思想不同。前者是EM算法，通过$\phi_{k,j}$和$\theta_{i,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过最大化对数似然函数更新。后者是Gibbs采样，用条件分布的的抽样近似联合分布。</li>
+<li><p>最大后验MAP是由贝叶斯估计推导而来，比最大似然多乘了参数分布。</p>
+</li>
+<li><p>LDA假设文章之间是独立的，词之间是独立的，是词袋模型。</p>
+</li>
+</ul>
+<h3 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h3><p>gamma函数是阶乘在实数上的推广</p>
+<script type="math/tex; mode=display">
+\Gamma(x) = \int_0^\infty t^{x-1}e^{-t}dt</script><script type="math/tex; mode=display">
+\Gamma(x+1) = x\Gamma(x)</script><script type="math/tex; mode=display">
+\Gamma(n)=(n-1)!</script><p>多项分布是二项分布拓展到多维的情况</p>
+<script type="math/tex; mode=display">
+Binom(k|n,p)=\binom{n}{k}p^k(1-p)^{n-k}</script><script type="math/tex; mode=display">
+Multi(\vec{m}|n,\vec{p})=\frac{n!}{m_1!\ldots{m_k!}}p_1^{m_1}\ldots{p_k^{m_k}}</script><p>Beta分布和Dirichlet分布是概率的概率分布，是概率密度函数。</p>
+<p>Dirichlet分布是Beta分布拓展到多维的情况。</p>
+<script type="math/tex; mode=display">
+Beta(p|\alpha,\beta)=\frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)}p^{\alpha-1}(1-p)^{\beta-1}</script><script type="math/tex; mode=display">
+Dirichlet(\vec{p}|\vec{\alpha})=\frac{\Gamma(\sum_{i=1}^k{\alpha^i})}{\prod_{i=1}^k{\Gamma(\alpha^i)}}\prod_{i=1}^{k}p_i^{\alpha^i-1}</script><p>Beta分布和Dirichlet分布的数学期望</p>
+<script type="math/tex; mode=display">
+E(Beta(p|\alpha,\beta))=\frac{\alpha}{\alpha+\beta}</script><script type="math/tex; mode=display">
+E(Dirichlet(\vec{p}|\vec{\alpha}))=(\frac{\alpha_1}{\sum_{k=1}^K\alpha_k},\frac{\alpha_2}{\sum_{k=1}^K\alpha_k},\ldots,\frac{\alpha_K}{\sum_{k=1}^K\alpha_k})</script><p>Beta分布是二项分布的共轭先验分布；Dirichlet分布是多项分布的共轭先验分布</p>
+<script type="math/tex; mode=display">
+Beta(p|\alpha,\beta)+BinomCount(k,n-k)=Beta(p|\alpha+k,\beta+n-k)</script><script type="math/tex; mode=display">
+Dirichlet(\vec{p}|\vec{\alpha})+MultiCount(\vec{m})=Dirichlet(\vec{p}|\vec{\alpha}+\vec{m})</script><h3 id="文档生成"><a href="#文档生成" class="headerlink" title="文档生成"></a>文档生成</h3><p>M篇语料$d_m\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。</p>
+<ol>
+<li>按照概率$P(d_m)$选择一篇文档$d_m$</li>
+<li>选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_m)$（分布$\theta$由参数$\beta$决定）选择一个隐含主题类别$z_k$</li>
+<li>选定$z_k$后，从词分布中按照概率$P(w_j|z_k)$（分布$\phi$由参数$\alpha$决定）选择一个词$w_j$</li>
+</ol>
+<p>如下图：</p>
+<p><img src="NLPimg\LDA1.png" alt="LDA1"></p>
+<h3 id="训练方法"><a href="#训练方法" class="headerlink" title="训练方法"></a>训练方法</h3><h4 id="Gibbs采样"><a href="#Gibbs采样" class="headerlink" title="Gibbs采样"></a>Gibbs采样</h4><p>在Unigram条件下，也就是不存在隐参数$z$的情况下：</p>
+<script type="math/tex; mode=display">
+p(\vec w|\vec\alpha)=\int p(\vec w|\vec p)p(\vec p|\vec\alpha)d\vec p=\frac{\Delta(\vec n+\vec\alpha)}{\Delta(\vec\alpha)}</script><p>其中，</p>
+<script type="math/tex; mode=display">
+\Delta(\vec\alpha)=\displaystyle\int\prod_{k=1}^Vp_k^{\alpha_k-1}d\vec p=\frac{\prod_{i=1}^k{\Gamma(\alpha^i)}}{\Gamma(\sum_{i=1}^k{\alpha^i})}</script><p>在LDA中，文档的生成概率：</p>
+<script type="math/tex; mode=display">
+p(\vec w,\vec z|\vec\alpha,\vec\beta)=p(\vec w|\vec z,\vec\beta)p(\vec z|\vec\alpha)=\prod_{k=1}^K\frac{\Delta(\vec\phi_k+\vec\beta)}{\Delta(\vec\beta)}\prod_{m=1}^M\frac{\Delta(\vec\theta_m+\vec\alpha)}{\Delta(\vec\alpha)}</script><p>通过上式推导Gibbs采样需要的条件概率：</p>
+<p>令$i=(m,n)$是一个二维下标，对应于第m篇文档的第n个词，每个词 $w_i$ 的频率为$n_i$ </p>
+<p>由：</p>
+<script type="math/tex; mode=display">
+p(\vec \theta_m|\vec z_{\neg i},\vec w_{\neg i})=Dir(\vec\theta_m|\vec n_{m,\neg i}+\vec\alpha)</script><script type="math/tex; mode=display">
+p(\vec \phi_k|\vec z_{\neg i},\vec w_{\neg i})=Dir(\vec\phi_k|\vec n_{k,\neg i}+\vec\beta)</script><p>得：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+p(z_i=k|\vec w,\vec z_{\neg i})&\propto p(z_i=k,w_i=t|\vec w_{\neg i},\vec z_{\neg i})\\
+&=\int p(z_i=k,w_i=t,\vec\theta_m,\vec\phi_k|\vec z_{\neg i},\vec w_{\neg i})d\vec\theta_md\vec\phi_k\\
+&=\int p(z_i=k,\vec\theta_m|\vec z_{\neg i},\vec w_{\neg i})\cdot p(w_i=t,\vec\phi_k|\vec z_{\neg i},\vec w_{\neg i})d\vec\theta_md\vec\phi_k\\
+&=\int p(z_i=k|\vec\theta_m)p(\vec\theta_m|\vec z_{\neg i},\vec w_{\neg i})\cdot p(w_i=t|\vec\phi_k)p(\vec\phi_k|\vec z_{\neg i},\vec w_{\neg i})d\vec\theta_md\vec\phi_k\\
+&=\int\theta_{mk}Dir(\vec\theta_m|\vec n_{m,\neg i}+\vec\alpha)\cdot\int\phi_{kt}Dir(\vec\phi_k|\vec n_{k,\neg i}+\vec\beta)\\
+&=\hat\theta_{m,k}\cdot\hat\phi_{k,t}\\
+&=\frac{n_{m,\neg i}^k+\alpha_k}{\sum_{k=1}^K(n_{m,\neg i}^k+\alpha_k)}\cdot\frac{n_{k,\neg i}^t+\beta_t}{\sum_{t=1}^V(n_{k,\neg i}^t+\beta_t)}
+\end{align}</script><h4 id="变分推断"><a href="#变分推断" class="headerlink" title="变分推断"></a>变分推断</h4><p>变分推断一般用指数分布族$q$来近似复杂分布$p(z)$，z为隐参数。</p>
+<p>指数分布族满族满足</p>
+<script type="math/tex; mode=display">
+p(x|\theta)=h(x)\exp(\eta(\theta)*T(x)-A(\theta))</script><p>$A(\theta)$为归一化因子，那么</p>
+<script type="math/tex; mode=display">
+\frac{d}{d\eta(\theta)}A(\theta)=E_{p(x|\theta)}[T(x)]</script><p>可以把期望转化成求导。</p>
+<p>LDA的变分推断用$q(\theta,\phi,z|\gamma,\lambda,\eta)$来估计$p(\theta,\phi,z|\alpha,\beta,\omega)$，如下图：</p>
+<p><img src="NLPimg\LDA2.png" alt="LDA2"></p>
+<p>图二把图一解耦了，用数学语言来表示</p>
+<script type="math/tex; mode=display">
+q(\theta,\phi,z|\gamma,\lambda,\eta)=\prod_{k=1}^Kq(\phi_k|\lambda_k)\prod_{d=1}^M(q(\theta_d|\gamma_d)\prod_{n=1}^Nq(z|\eta))</script><p>参数估计需要两步，第一步通过极大化ELBO估计$(\gamma,\lambda,\eta)$，然后用EM算法求解$(\alpha,\beta)$。</p>
+<p><strong>ELBO</strong></p>
+<p>ELBO就是第一张图的期望减去第二张图的期望</p>
+<script type="math/tex; mode=display">
+\begin{align}
+L(\gamma,\lambda,\eta;\alpha,\beta)&=E_q\log p(\theta,\phi,z,w|\alpha,\beta)-E_q\log q(\theta,\phi,z|\gamma,\lambda,\eta)\\
+&=\begin{matrix}\underbrace{(E_q[\log p(\phi|\beta)]+E_q[\log p(z|\theta)]+E_q[\log p(\theta|\alpha)]+E_q[\log p(w|z,\phi)])}\\图一\end{matrix}\\
+&-\begin{matrix}\underbrace{(E_q[\log q(\phi|\lambda)]+E_q[\log q(z|\eta)]+E_q[\log q(\theta|\gamma)])}\\图二\end{matrix}
+\end{align}</script><p><strong>EM算法求解</strong></p>
+<p>E步</p>
+<p>对上面7项展开（用到了指数分布族性质），对各隐参数$(\gamma,\lambda,\eta)$求偏导等于零，算出最优隐参数表达式$(\gamma,\lambda,\eta)$并迭代</p>
+<script type="math/tex; mode=display">
+\eta_{nk}\propto\exp(\sum_{i=1}^Vw_n^i(\Psi(\lambda_{ki})-\Psi(\sum_{i'=1}^V\lambda_{ki'}))+\Psi(\gamma_k)-\Psi(\sum_{k'=1}^K\gamma_{k'}))</script><p>其中，</p>
+<script type="math/tex; mode=display">
+\Psi(x)=\frac{d}{dx}\log\Gamma(x)=\frac{\Gamma'(x)}{\Gamma(x)}</script><p>，$w_n^i=1$当且仅当文档中第$n$个词为词汇表中第$i$个词</p>
+<script type="math/tex; mode=display">
+\gamma_k=\alpha_k+\sum_{n=1}^N\eta_{nk}</script><script type="math/tex; mode=display">
+\lambda_{ki}=\beta_i+\sum_{d=1}^M\sum_{n=1}^{N_d}\eta_{dnk}w_{dn}^i</script><p>M步</p>
+<p>极大化ELBO，并用牛顿法求解$(\alpha,\beta)$</p>
+<script type="math/tex; mode=display">
+\alpha_k=\alpha_k+\frac{\nabla_{\alpha_k}L}{\nabla_{\alpha_k\alpha_j}L}</script><script type="math/tex; mode=display">
+\beta_i=\beta_i+\frac{\nabla_{\beta_i}L}{\nabla_{\beta_i\beta_j}L}</script><p>其中，</p>
+<script type="math/tex; mode=display">
+\nabla_{\alpha_k}L=M(\Psi(\sum_{k'=1}^K\alpha_{k'})-\Psi(\alpha_k))+\sum_{d=1}^M(\Psi(\gamma_{dk})-\Psi(\sum_{k'=1}^K\gamma_{dk'}))</script><script type="math/tex; mode=display">
+\nabla_{\alpha_k\alpha_j}L=M(\Psi'(\sum_{k'=1}^K\alpha_{k'})-\delta(k,j)\Psi'(\alpha_k))</script><p>再其中，当且仅当$k=j$时，$\delta(k,j)=1$，否则$\delta(k,j)=0$。</p>
+<script type="math/tex; mode=display">
+\nabla_{\beta_i}L=K(\Psi(\sum_{i'=1}^V\beta_{i'})-\Psi(\beta_i))+\sum_{k=1}^K(\Psi(\lambda_{ki})-\Psi(\sum_{i'=1}^V\lambda_{ki'}))</script><script type="math/tex; mode=display">
+\nabla_{\beta_i\beta_j}L=K(\Psi'(\sum_{i'=1}^V\beta_{i'})-\delta(i,j)\Psi'(\beta_i))</script><p>再其中，当且仅当$i=j$时，$\delta(i,j)=1$，否则$\delta(i,j)=0$。</p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><h3 id="Gibbs采样-1"><a href="#Gibbs采样-1" class="headerlink" title="Gibbs采样"></a>Gibbs采样</h3><ol>
+<li>随机给每一篇文档的每一个词$w$，随机分配主题编号$z$</li>
+<li>统计每个主题$z_i$下出现字$w$数量，以及每个文档$d$中出主题$z_i$中的词$w$的数量</li>
+<li>每次排除当前词$w$的主题分布$z_i$，根据其他所有词的主题分类，来估计当前词$\omega$分配到各个主题$z_1,z_2,\ldots,z_k$的概率，即计算$p(z_i|z_{\neg i},d,w)$(Gibbs updating rule)。得到当前词属于所有主题$z_1,z_2,\ldots,z_k$的概率分布后，重新为词采样一个新的主题$z_1$。用同样的方法不断更新的下一个词的主题，直到每个文档下的主题分布$\theta_n$和每个主题下的词分布$\phi_k$收敛。</li>
+<li>最后输出待估计参数，$\theta_n$和$\phi_k$，每个单词的主题$z_{n,k}$也可以得到。</li>
+</ol>
+<h3 id="变分推断-1"><a href="#变分推断-1" class="headerlink" title="变分推断"></a>变分推断</h3><p>输入：主题数$K$，$M$个文档与对应的词。</p>
+<ol>
+<li><p>初始化$\alpha,\beta$向量。</p>
+</li>
+<li><p>开始EM算法迭代循环直到收敛。</p>
+<ol>
+<li><p>初始化所有的$\gamma,\lambda,\eta$，进行LDA的E步迭代循环,直到$\gamma,\lambda,\eta$收敛。</p>
+<ol>
+<li><p>for d from 1 to M:</p>
+<p>​    for n from 1 to $N_d$:</p>
+<p>​        for k from 1 to K:</p>
+<p>​            更新$\eta_{dnk}$</p>
+<p>​    标准化$\eta_{nk}$使该向量各项的和为1.</p>
+<p>更新$\gamma_{dk}$。</p>
+</li>
+<li><p>for k from 1 to K:</p>
+<p>​    for i from 1 to V:</p>
+<p>​        更新$\lambda_{ki}$。</p>
+</li>
+<li><p>如果$\gamma,\lambda,\eta$均已收敛，则跳出循环。</p>
+</li>
+</ol>
+</li>
+<li><p>进行LDA的M步迭代循环， 直到$\alpha,\beta$收敛</p>
+<ol>
+<li>用牛顿法迭代更新$\alpha,\beta$直到收敛</li>
+</ol>
+</li>
+<li><p>如果所有的参数均收敛，则算法结束，否则回到EM步。</p>
+</li>
+</ol>
+</li>
+</ol>
+<p>算法结束后，我们可以得到模型的后验参数$\alpha,\beta$，以及我们需要的近似模型主题词分布$\lambda$，以及近似训练文档主题分布$\gamma$。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-07-%E5%8F%98%E5%88%86%E6%8E%A8%E6%96%AD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/16/NLP-07-%E5%8F%98%E5%88%86%E6%8E%A8%E6%96%AD/" class="post-title-link" itemprop="url">NLP-07-变分推断</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 09:38:33 / 修改时间：10:11:05" itemprop="dateCreated datePublished" datetime="2020-09-16T09:38:33+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><p>相对熵对应的是似然比的对数期望，相对熵 D(p||q)度量当真实分布为 P而假定分布为Q时的无效性</p>
+<script type="math/tex; mode=display">
+D_{KL}(p||q)=\sum_xp(x)\log\frac{p(x)}{q(x)}</script><h3 id="两种推导"><a href="#两种推导" class="headerlink" title="两种推导"></a>两种推导</h3><p>ELBO两种推导方式，一种条件概率公式，一种类似EM算法：</p>
+<p><strong>条件概率</strong></p>
+<script type="math/tex; mode=display">
+\log P(x)=\log\frac{P(x,z)}{q(z)}-\log\frac{P(z|x)}{q(z)}=\log P(x,z)-\log q(z)+\log \frac{q(z)}{P(z|x)}</script><p>两边对$q(z)$做期望</p>
+<script type="math/tex; mode=display">
+\log P(x)=\begin{matrix}\underbrace{\int q(z)\log P(x,z)dz-\int q(z)\log q(z)dz}\\ELBO\end{matrix}+\begin{matrix}\underbrace{\int q(z)\log\frac{q(z)}{P(z|x)}}\\KL(q(z)||P(z|x))\end{matrix}</script><p><strong>EM算法</strong></p>
+<script type="math/tex; mode=display">
+\log P(x)=\log(\int(\frac{P(x,z)}{q(z)}q(z))dz)</script><p>由Jessen不等式</p>
+<script type="math/tex; mode=display">
+\log P(x)\ge E_{zq(z)}\log P(x,z)-E_{zq(z)}\log q(z)=\begin{matrix}\underbrace{\int q(z)\log P(x,z)dz-\int q(z)\log q(z)dz}\\ELBO\end{matrix}</script><p>最小化KL散度，即为最大化ELBO。</p>
+<p>平均场理论作出后验条件独立假设，即$P(Z|X)=P(Z_i|X)P(Z_{\neg i}|X)$。类似量子多体问题中的多体问题转化为单体问题（用一个单体有效场代替其他电子的库仑相互作用）我们固定$Z_{\neg i}$，迭代$Z_i$</p>
+<p>因为$q_i(z_i)$独立同分布，所以可以依次优化，由</p>
+<script type="math/tex; mode=display">
+L(q_j)=\int\prod_iq_j\lbrace\ln p(X,Z)-\sum_i\ln q_i\rbrace dZ=\int q_i\ln\hat p(X,Z_j)dZ_j-\int q_j\ln q_jdZ_j+C</script><p>求出</p>
+<script type="math/tex; mode=display">
+q_j^*(z_j)=\frac{\mathbb{E}_{i\ne j}[\ln p(X,Z)]}{\int\exp(\mathbb{E}_{i\ne j}[\ln p(X,Z)])dZ_j}</script><h3 id="EM算法与变分推断"><a href="#EM算法与变分推断" class="headerlink" title="EM算法与变分推断"></a>EM算法与变分推断</h3><ul>
+<li><p>EM算法和变分推断都类似极大后验估计(MAP)或贝叶斯估计，区别是前者有隐含数据，变分推断是EM算法的扩展</p>
+</li>
+<li><p>EM算法的隐含数据由固定参数生成；变分推断隐含数据由随机变量参数生成</p>
+</li>
+<li><p>EM算法猜测隐含数据值并迭代；变分推断猜测隐含数据概率分布并迭代</p>
+</li>
+<li><p>EM算法可以推导出$Q(Z)$等于$P(Z|X)$；变分推断用$Q(Z)$逼近$P(Z|X)$</p>
+</li>
+</ul>
+<h3 id="Gibbs采样与变分推断"><a href="#Gibbs采样与变分推断" class="headerlink" title="Gibbs采样与变分推断"></a>Gibbs采样与变分推断</h3><ul>
+<li><p>Gibbs采样通过$P(Z_i|Z_{\neg i})$抽样；变分推断通过$Q^{[k]}(Z_i|X)\propto\exp\int_{Z^*_{\neg i}}Q^{[k]}(Z_{\neg i}|X)\log P(Z,X)dZ_{\neg i}$迭代</p>
+</li>
+<li><p>Gibbs采样通过抽取大量的样本估计真实的后验分布；变分推断限制近似分布的类型，从而得到一种局部最优，但具有确定解的近似后验分布</p>
+</li>
+</ul>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><ol>
+<li>初始化$Q^{(0)}(Z_i)$，可随机取</li>
+<li>在第$k$步，计算$Z_{\neg i}$的边缘密度$Q^{[k]}(Z_{\neg i}|X)\propto\exp\int_{Z^*_i}Q^{[k-1]}(Z_i|X)\log P(Z,X)dZ_i$</li>
+<li>计算$Z_{i}$的边缘密度$Q^{[k]}(Z_i|X)\propto\exp\int_{Z^*_{\neg i}}Q^{[k]}(Z_{\neg i}|X)\log P(Z,X)dZ_{\neg i}$</li>
+<li>理论上$Q^{[\infty]}(Z_i|X)$将会收敛，则反复执行2和3直到$Q(Z_i)$，$Q(Z_{\neg i})$稳定，或稳定在某个小范围内</li>
+<li>最后得$Q(Z)=Q(Z_i|X)Q(Z_{\neg i}|X)$</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-06-Gibbs%E9%87%87%E6%A0%B7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/16/NLP-06-Gibbs%E9%87%87%E6%A0%B7/" class="post-title-link" itemprop="url">NLP-06-Gibbs采样</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-16 09:31:23 / 修改时间：10:10:57" itemprop="dateCreated datePublished" datetime="2020-09-16T09:31:23+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="蒙特卡洛方法"><a href="#蒙特卡洛方法" class="headerlink" title="蒙特卡洛方法"></a>蒙特卡洛方法</h3><p>蒙特卡洛是为了计算函数$f(x)$在概率密度函数$p(x)$下的期望。则可根据$p(x)$抽取一组样本，然后计算$f(x)$在这些样本上的均值：</p>
+<script type="math/tex; mode=display">
+E_p[f]=\int f(x)p(x)dx</script><script type="math/tex; mode=display">
+\hat f=\displaystyle \frac{1}{N}\sum_{i=1}^Nf(x_i)</script><h3 id="马尔科夫链"><a href="#马尔科夫链" class="headerlink" title="马尔科夫链"></a>马尔科夫链</h3><p>马尔科夫链假设$X_{t+1}$的状态的条件概率仅仅依赖于时刻$X_t$，即</p>
+<script type="math/tex; mode=display">
+P(X_{t+1}|\ldots X_{t-2}X_{t-1}X_t)=P(X_{t+1}|X_t)</script><p>非周期马尔科夫链的转移概率$P$有收敛性质，结果与$i$无关，即</p>
+<script type="math/tex; mode=display">
+\displaystyle\lim_{n\to\infty}P_{ij}^n=\pi(j)</script><p>它的细致平稳条件可以通过任何简单分布迭代到复杂的平稳分布，细致平稳条件为</p>
+<script type="math/tex; mode=display">
+\pi(i)P(i,j)=\pi(j)P(j,i)</script><p>矩阵形式：</p>
+<script type="math/tex; mode=display">
+\pi P=\pi</script><h3 id="M-H采样"><a href="#M-H采样" class="headerlink" title="M-H采样"></a>M-H采样</h3><p>对于任意不满足细致平稳条件的转移概率$Q$，可以通过接受率$\alpha$来修正</p>
+<script type="math/tex; mode=display">
+\pi(i)Q(i,j)\alpha(i,j)=\pi(j)Q(j,i)\alpha(j,i)</script><script type="math/tex; mode=display">
+\alpha(i,j)=\pi(j)Q(j,i)</script><script type="math/tex; mode=display">
+\alpha(j,i)=\pi(i)Q(i,j)</script><p>从均匀分布$u\sim uniform[0,1]$，若$u&lt;\alpha$，接受转移，否则不接受。</p>
+<p>有时接受率过小，M-H采样可以扩大接受率</p>
+<script type="math/tex; mode=display">
+\alpha(i,j)=min\lbrace\frac{\pi(j)Q(j,i)}{\pi(i)Q(i,j)},1\rbrace</script><p>在多维情况下，边缘概率符合细致平稳条件，可以通过坐标轴上不停的轮换来采样，不需要计算接受率，即为Gibbs采样</p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><ol>
+<li>输入平稳分布$\pi(x_1,x_2,\ldots,x_n)$或者对应的所有特征的条件概率分布，设定状态转移次数阈值$n_1$，需要的样本个数$n_2$</li>
+<li>随机初始化初始状态值$(x^{(0)}_1,x^{(0)}_2,\ldots,x^{(0)}_n)$</li>
+<li>for $t=0$ to $n_1+n_2−1$: <ol>
+<li>从条件概率分布$P(x_1|x^{(t)}_2,x^{(t)}_3,\ldots,x^{(t)}_n)$中采样得到样本$x^{t+1}_1$</li>
+<li>从条件概率分布$P(x_2|x^{(t+1)}_1,x^{(t)}_3,\ldots,x^{(t)}_n)$中采样得到样本$x^{t+1}_2$</li>
+<li>…</li>
+<li>从条件概率分布$P(x_j|x^{(t+1)}_1,x^{(t+1)}_2,\ldots,x^{(t+1)}_{j-1},x^{(t)}_{j+1},\ldots,x^{(t)}_n)$中采样得到样本$x^{t+1}_j$</li>
+<li>…</li>
+<li>从条件概率分布$P(x_n|x^{(t+1)}_1,x^{(t+1)}_2,\ldots,x^{(t+1)}_{n-1})$中采样得到样本$x^{t+1}_n$</li>
+</ol>
+</li>
+</ol>
+<p>样本集$\lbrace(x^{(n_1)}_1,x^{(n_1)}_2,\ldots,x^{(n_1)}_n),\ldots,(x^{(n_1+n_2−1)}_1,x^{(n_1+n_2−1)}_2,\ldots,x^{(n_1+n_2−1)}_n)\rbrace$即为我们需要的平稳分布对应的样本集。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/NLP-05-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/15/NLP-05-%E6%A6%82%E7%8E%87%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90pLSA/" class="post-title-link" itemprop="url">NLP-05-概率潜在语义分析pLSA</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-15 19:19:23" itemprop="dateCreated datePublished" datetime="2020-09-15T19:19:23+08:00">2020-09-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-09-16 10:10:48" itemprop="dateModified" datetime="2020-09-16T10:10:48+08:00">2020-09-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="文档生成"><a href="#文档生成" class="headerlink" title="文档生成"></a>文档生成</h3><p>M篇语料$d_i\in\{d_1,d_2,\ldots,d_M\}$，K个主题$z_k\in\{z_1,z_2,\ldots,z_K\}$，一篇文档中N个词$w_j\in\{w_1,w_2,\ldots,w_N\}$。</p>
+<ol>
+<li>按照概率$P(d_i)$选择一篇文档$d_i$</li>
+<li>选定文档$d_i$后 ，从主题分布中按照概率$P(z_k|d_i)$（参数$\theta$）选择一个隐含主题类别$z_k$</li>
+<li>选定$z_k$后，从词分布中按照概率$P(w_j|z_k)$（参数$\phi$）选择一个词$w_j$</li>
+</ol>
+<p>如下图：</p>
+<p><img src="NLPimg\pLSA.png" alt="pLSA"></p>
+<p>文档中每个词的生成概率为：</p>
+<script type="math/tex; mode=display">
+P(d_i,w_j)=P(d_i)P(w_j|d_i)=P(d_i)\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)</script><p>令$\phi_{kj}$表示词项$w_j$出现在主题$z_k$中的概率，即</p>
+<script type="math/tex; mode=display">
+P(w_j|z_k)=\phi_{k,j},\sum_{w_j\in\mathcal{V}}\phi_{k,j}=1</script><p>令$\theta_{i,k}$表示主题$z_k$出现在文档$d_i$中的概率，即</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i)=\theta_{i,k},\sum_{z_k\in\mathcal{Z}}\theta_{i,k}=1</script><p>令$\Phi=(\phi_1,\phi_2,\ldots,\phi_K)$为K个主题到词的概率，M篇语料$(d_1,d_2,\ldots,d_M)$中每篇文档$d_i$中，$\Theta=(\theta_1,\theta_2,\ldots,\theta_M)$为M个文档到主题的概率。</p>
+<p>令$n(d_i,w_j)$表示词项$w_j$在文档$d_i$中的词频，$n(d_i)$表示文档$d_i$中词的总数，则有：</p>
+<script type="math/tex; mode=display">
+n(d_i)=\sum_{w_j\in\mathcal{V}}n(d_i,w_j)</script><p>由词与词之间独立，文档与文档之间独立，整个语料词分布为：</p>
+<script type="math/tex; mode=display">
+P(W|D)=\prod_{i=1}^M\prod_{j=1}^NP(d_i,w_j)^{n(d_i,w_j)}</script><p>可以得到对数似然函数：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+\mathcal{L(\Phi,\Theta)}&=\log P(W|D)\\
+&=\sum_{i=1}^M\sum_{j=1}^Nn(d_i,w_j)\log P(d_i,w_j)\\
+&=\sum_{i=1}^M\sum_{j=1}^Nn(d_i,w_j)\left(\log P(d_i)+\log\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)\right)\\
+&=\sum_{i=1}^Mn(d_i)\left(\log P(d_i)+\sum_{j=1}^N\frac{n(d_i,w_j)}{n(d_i)}\log\sum_{k=1}^KP(w_j|z_k)P(z_k|d_i)\right)\\
+&=\sum_{i=1}^Mn(d_i)\left(\log P(d_i)+\sum_{j=1}^N\frac{n(d_i,w_j)}{n(d_i)}\log\sum_{k=1}^K\phi_{k,j}\theta_{i,k}\right)
+\end{align}</script><h3 id="EM算法求解"><a href="#EM算法求解" class="headerlink" title="EM算法求解"></a>EM算法求解</h3><p>可以使用EM算法，通过$\phi_{k,j}$和$\theta_{m,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过隐参数更新。</p>
+<p>E步，隐变量的后验分布：</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j}\theta_{i,k}}{\sum_{l=1}^K\phi_{l,j}\theta_{i,l}}</script><p>M步，最大化样本分布的对数似然函数$\mathcal{L}$，第一项与参数无关，去掉 ：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+\mathcal{L}&=\sum_{m=1}^M\sum_{j=1}^Nn(d_i,w_j)\log\sum_{k=1}^K\phi_{k,j}\theta_{i,k}\\
+&=\sum_{m=1}^M\sum_{j=1}^Nn(d_i,w_j)\sum_{k=1}^KP(z_k|d_i,w_j)log[\phi_{k,j}\theta_{i,k}]
+\end{align}</script><p>由$\sum_{j=1}^m\phi_{k,j}=1$和$\sum_{k=1}^K\theta_{i,k}=1$，引入拉格朗日乘子，求偏导</p>
+<p>参数更新公式为：</p>
+<script type="math/tex; mode=display">
+\phi_{k,j}=\frac{\sum_{m=1}^Mn(d_i,w_j)P(z_k|d_i,w_j)}{\sum_{m=1}^N\sum_{i=1}^Mn(d_i,w_m)P(z_k|d_i,w_m)}</script><script type="math/tex; mode=display">
+\theta_{i,k}=\frac{\sum_{j=1}^Nn(d_i,w_j)P(z_k|d_i,w_j)}{n(d_i)}</script><h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><p>输入：单词-文本共现数据</p>
+<p>输出：和。</p>
+<ol>
+<li><p>设置参数和的初始值。</p>
+</li>
+<li><p>迭代执行以下E步，M步，直到收敛为止：</p>
+<p>E步：</p>
+<script type="math/tex; mode=display">
+P(z_k|d_i,w_j)=\frac{P(z_k,d_i,w_j)}{\sum_{l=1}^KP(z_l,d_i,w_j)}=\frac{\phi_{k,j}\theta_{i,k}}{\sum_{l=1}^K\phi_{l,j}\theta_{i,l}}</script><p>M步：</p>
+<script type="math/tex; mode=display">
+\phi_{k,j}=\frac{\sum_{m=1}^Mn(d_i,w_j)P(z_k|d_i,w_j)}{\sum_{m=1}^N\sum_{i=1}^Mn(d_i,w_m)P(z_k|d_i,w_m)}</script><script type="math/tex; mode=display">
+\theta_{i,k}=\frac{\sum_{j=1}^Nn(d_i,w_j)P(z_k|d_i,w_j)}{n(d_i)}</script></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/NLP-04-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/15/NLP-04-%E6%BD%9C%E5%9C%A8%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90LSA/" class="post-title-link" itemprop="url">NLP-04-潜在语义分析LSA</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-15 19:10:26" itemprop="dateCreated datePublished" datetime="2020-09-15T19:10:26+08:00">2020-09-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-09-16 10:10:40" itemprop="dateModified" datetime="2020-09-16T10:10:40+08:00">2020-09-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h2><h3 id="词频-逆文本频率-TF-IDF"><a href="#词频-逆文本频率-TF-IDF" class="headerlink" title="词频-逆文本频率 TF-IDF"></a>词频-逆文本频率 TF-IDF</h3><p>词频$TF$会把那些类似停用词的重要性放大，因此需要逆文本频率$IDF$来中和</p>
+<script type="math/tex; mode=display">
+词频(TF)=\frac{某个词再分帐中的出现次数}{文章的总词数}</script><script type="math/tex; mode=display">
+逆文本频率(IDF)=\log\frac{词库的文档总数+1}{包含该词的文档数+1}+1</script><script type="math/tex; mode=display">
+TF-IDF=词频(TF)\times 逆文档频率(IDF)</script><h3 id="奇异值分解SVD"><a href="#奇异值分解SVD" class="headerlink" title="奇异值分解SVD"></a>奇异值分解SVD</h3><p>奇异值分解，相当于非方阵的特征值</p>
+<p><strong>特征值分解</strong></p>
+<p>特征值特征向量定义如下：</p>
+<script type="math/tex; mode=display">
+Ax=\lambda x</script><p>其中$A$为$n\times n$实对称方阵，$x$为$n$维向量特征向量，$\lambda$为$A$的特征值。</p>
+<p>特征值$\lambda_1\le\lambda_2\le\ldots\le\lambda_n$对应特征向量$\lbrace w_1,w_2,\ldots,w_n\rbrace$线性无关，矩阵$A$有特征分解：</p>
+<script type="math/tex; mode=display">
+A=W\Sigma W^{-1}</script><p>其中$W$为$n$个特征向量张成的$n\times n$维矩阵，$\Sigma$为$n$个特征值为主对角线的$n\times n$维矩阵</p>
+<p>满足$|w_i|_2=1$，或$w_i^Tw_i=1$，则$W$为标准正交基，满足$W^TW=I$，即$W^T=W^{-1}$，即$W$为酉矩阵</p>
+<p><strong>奇异值分解</strong></p>
+<p>奇异值左右奇异向量定义如下：</p>
+<script type="math/tex; mode=display">
+A=U\Sigma V^T</script><p>其中$A$为$m\times n$实对称方阵，$U$为$m\times m$维矩阵，$V$为$n\times n$维矩阵，都是酉矩阵，满足$U^TU=I,V^TV=I$。此外，$\Sigma$为$r$个奇异值在主对角线上的$m\times n$维矩阵。</p>
+<p>虽然$A$不是方阵，但$A^TA$和$AA^T$是，则有：</p>
+<script type="math/tex; mode=display">
+(A^TA)v_i=\lambda_iv_i</script><script type="math/tex; mode=display">
+(AA^T)u_i=\lambda_iu_i</script><p>由$n$个$v$张成的$n\times n$矩阵$V$为A的右奇异向量，由$m$个$u$张成的$m\times m$矩阵$U$为A的左奇异向量。</p>
+<p>奇异值矩阵$\Sigma$的求解<strong>方法一</strong>：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+&A=U\Sigma V^T\\
+&\Rightarrow AV=U\Sigma V^TV\\
+&\Rightarrow AV=U\Sigma\\
+&\Rightarrow Av_i=\sigma_iu_i\\
+&\Rightarrow\sigma_i=Av_i/u_i
+\end{align}</script><p>证明$U,V$为左右奇异矩阵：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+&A=U\Sigma V^T\\
+&\Rightarrow A^T=V\Sigma^TU^T\\
+&\Rightarrow A^TA=V\Sigma^TU^TU\Sigma V^T=V\Sigma^2V^T
+\end{align}</script><script type="math/tex; mode=display">
+\begin{align}
+&A=U\Sigma V^T\\
+&\Rightarrow A^T=V\Sigma^TU^T\\
+&\Rightarrow AA^T=U\Sigma V^TV\Sigma^TU^T=U\Sigma^2U^T
+\end{align}</script><p>由上式，显然奇异值求解<strong>方法二</strong>：</p>
+<script type="math/tex; mode=display">
+\sigma_i=\sqrt{\lambda_i}</script><p>SVD可以用于降维：</p>
+<script type="math/tex; mode=display">
+A_{m\times n}=U_{m\times m}\Sigma_{m\times n}V_{n\times n}^T</script><script type="math/tex; mode=display">
+A_{m\times m}\approx U_{m\times k}\Sigma_{k\times k}V_{k\times n}^T</script><h3 id="非负矩阵分解NMF"><a href="#非负矩阵分解NMF" class="headerlink" title="非负矩阵分解NMF"></a>非负矩阵分解NMF</h3><p>与SVD一样可以用于降维和主题分析，目标是期望将矩阵分解为两个矩阵</p>
+<script type="math/tex; mode=display">
+A_{m\times n}\approx W_{m\times k}H_{k\times n}</script><p>NMF期望找到这样的两个矩阵$W,H$，使$WH$的矩阵乘积得到的矩阵对应的每个位置的值和原矩阵$A$对应位置的值相比误差尽可能的小，即：</p>
+<script type="math/tex; mode=display">
+\arg\min_{W,H}\frac{1}{2}\sum_{i,j}(A_{i,j}-(WH)_{ij})^2</script><script type="math/tex; mode=display">
+\arg\min_{W,H}\frac{1}{2}\|A-WH\|_F^2</script><p>也可加入正则化：</p>
+<script type="math/tex; mode=display">
+\arg\min_{W,H}\frac{1}{2}\|A-WH\|_F^2+\alpha\rho\|W\|_1+\alpha\rho\|H\|_1+\frac{\alpha(1-\rho)}{2}\|W\|_F^2+\frac{\alpha(1-\rho)}{2}\|H\|_F^2</script><p>可以使用梯度下降法、拟牛顿法或坐标轴下降法训练</p>
+<h3 id="词频-逆文本频率-TF-IDF-1"><a href="#词频-逆文本频率-TF-IDF-1" class="headerlink" title="词频-逆文本频率 TF-IDF"></a>词频-逆文本频率 TF-IDF</h3><p>词频$TF$会把那些类似停用词的重要性放大，因此需要逆文本频率$IDF$来中和</p>
+<script type="math/tex; mode=display">
+词频(TF)=\frac{某个词再分帐中的出现次数}{文章的总词数}</script><script type="math/tex; mode=display">
+逆文本频率(IDF)=\log\frac{词库的文档总数+1}{包含该词的文档数+1}+1</script><script type="math/tex; mode=display">
+TF-IDF=词频(TF)\times 逆文档频率(IDF)</script><h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><h3 id="SVD方法"><a href="#SVD方法" class="headerlink" title="SVD方法"></a>SVD方法</h3><ul>
+<li><p>我们输入的有$m$个文本，每个文本有$n$个词。而$A_{ij}$则对应第$i$个文本的第$j$个词的特征值，这里最常用的是基于预处理后的标准化TF-IDF值。$k$是我们假设的主题数，一般要比文本数少。SVD分解后，$U_{il}$对应第$i$个文本和第$l$个主题的相关度。$V_{jm}$对应第$j$个词和第$m$个词义的相关度。$\Sigma_{lm}$对应第$l$个主题和第$m$个词义的相关度。 则文本a和文本b的主题相似度可以用$U$的a行和b行向量余弦相似度计算。$U$相当于Doc2Vec，$V$相当于Word2Vec。</p>
+</li>
+<li><p>我们输入的有$m$个词，对应$n$个文本。而$A_{ij}$则对应第$i$个词档的第$j$个文本的特征值，这里最常用的是基于预处理后的标准化TF-IDF值。$k$是我们假设的主题数，一般要比文本数少。SVD分解后，$U_{il}$对应第$i$个词和第$l$个词义的相关度。$V_{jm}$对应第$j$个文本和第$m$个主题的相关度。$\Sigma_{lm}$对应第$l$个词义和第$m$个主题的相关度。 则文本a和文本b的主题相似度可以用$V^T$的a列和b列向量余弦相似度计算。$V$相当于Doc2Vec，$U$相当于Word2Vec。</p>
+</li>
+</ul>
+<p>以第二种情况为例</p>
+<p><img src="NLPimg\LSA1.png" alt="LSA1"></p>
+<p><img src="NLPimg\LSA2.png" alt="LSA2"></p>
+<h3 id="NMF方法"><a href="#NMF方法" class="headerlink" title="NMF方法"></a>NMF方法</h3><ul>
+<li>我们输入的有$m$个文本，$n$个词，而$A_{ij}$对应第$i$个文本的第$j$个词的特征值，这里最常用的是基于预处理后的标准化TF-IDF值。$k$是我们假设的主题数，一般要比文本数少。NMF分解后，$W_{ik}$对应第$i$个文本的和第$k$个主题的概率相关度，而$H_{kj}$对应第$j$个词和第$k$个主题的概率相关度。$W$相当于Doc2Vec，$H$相当于Word2Vec。</li>
+<li>我们输入的有$m$个词，$n$个文本，而$A_{ij}$对应第i个词的第$j$个文本的特征值，这里最常用的是基于预处理后的标准化TF-IDF值。$k$是我们假设的主题数，一般要比文本数少。NMF分解后，$W_{ik}$对应第$i$个词的和第$k$个主题的概率相关度，而$H_{kj}$对应第$j$个文本和第$k$个主题的概率相关度。 $H$相当于Doc2Vec，$W$相当于Word2Vec。</li>
+</ul>
+<p>以第二种情况为例</p>
+<p><img src="NLPimg\LSA3.png" alt="LSA3"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/NLP-03-EM%E7%AE%97%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/15/NLP-03-EM%E7%AE%97%E6%B3%95/" class="post-title-link" itemprop="url">NLP-03-EM算法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-15 19:04:35" itemprop="dateCreated datePublished" datetime="2020-09-15T19:04:35+08:00">2020-09-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-09-16 09:47:28" itemprop="dateModified" datetime="2020-09-16T09:47:28+08:00">2020-09-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="模型原理"><a href="#模型原理" class="headerlink" title="模型原理"></a>模型原理</h2><p>若有未知的有隐含数据和模型参数，无法直接用极大化对数似然函数得到模型分布的参数。</p>
+<p>需要先猜想隐含数据（EM算法的E步），接着基于观察数据和猜测的隐含数据一起来极大化对数似然，求解我们的模型参数（EM算法的M步)。</p>
+<p>m个样本观察数据$x=(x^{(1)},x^{(2)},\ldots,x^{(m)})$，隐含数据$z=(z^{(1)},z^{(2)},\ldots,z^{(m)})$，求参数$\theta$</p>
+<script type="math/tex; mode=display">
+\begin{align}\theta
+&=\arg\max_\theta\sum_{i=1}^m\log\sum_{z^{(i)}}P(x^{(i)},z^{(i)};\theta)\\
+&=\arg\max_\theta\sum_{i=1}^m\log\sum_{z^{(i)}}Q_i(z^{(i)})\frac{P(x^{(i)},z^{(i)};\theta)}{Q_i(z^{(i)})}\\
+&\ge\arg\max_\theta\sum_{i=1}^m\sum_{z^{(i)}}Q_i(z^{(i)})\log\frac{P(x^{(i)},z^{(i)};\theta)}{Q_i(z^{(i)})}\end{align}</script><p>其中用到Jensen不等式，如果$f(x)$为凸函数，则</p>
+<script type="math/tex; mode=display">
+f(E(x))\ge E(f(x))</script><p>或者</p>
+<script type="math/tex; mode=display">
+\log\sum_j\lambda_jy_j\ge\sum_j\lambda_j\log y_j,\lambda_j\ge0,\sum_j\lambda_j=1</script><p>若要满足Jessen不等式，则：</p>
+<script type="math/tex; mode=display">
+\frac{P(x^{(i)},z^{(i)};\theta)}{Q_i(z^{(i)})}=c,c为常数</script><p>由于$Q_i(z^{(i)})$为分布，满足：</p>
+<script type="math/tex; mode=display">
+\sum_zQ_i(z^{(i)})=1</script><p>由上两式得：</p>
+<script type="math/tex; mode=display">
+Q_i(z^{(i)})=\frac{P(x^{i},z^{(i)};\theta)}{\sum_zP(x^{(i)},z^{(i)};\theta)}=\frac{P(x^{(i)},z^{(i)};\theta)}{P(x^{(i)},\theta)}=P(z^{(i)}|x^{(i)};\theta)</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\displaystyle\theta\propto\arg\max_\theta\sum_{i=1}^m\sum_{z^{(i)}}P(z^{(i)}|x^{(i)};\theta)\log P(x^{(i)},z^{(i)};\theta)</script><p>其中$Q_i(z^{(i)})=P(z^{(i)}|x^{(i)};\theta)$。</p>
+<h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><p>输入：观察数据$x=(x^{(1)},x^{(2)},\ldots,x^{(m)})$，联合分布p(x,z;θ)p(x,z;θ), 条件分布$p(z|x;θ)$, 最大迭代次数$J$。</p>
+<ol>
+<li><p>随机初始化模型参数$\theta$的初值$\theta^0$。</p>
+</li>
+<li><p>for j  from 1 to J开始EM算法迭代：</p>
+<ol>
+<li><p>E步：计算联合分布的条件概率期望：</p>
+<script type="math/tex; mode=display">
+Q_i(z^{(i)})=P(z^{(i)}|x^{(i)};\theta)</script><script type="math/tex; mode=display">
+L(\theta,\theta^j)=\sum_{i=1}^m\sum_{z^{(i)}}Q_i(z^{(i)})\log P(x^{(i)},z^{(i)};\theta)</script></li>
+<li><p>M步：极大化$L(\theta,\theta^j)$,得到$\theta^{j+1}$:</p>
+<script type="math/tex; mode=display">
+\theta^{j+1}=\arg\max_\theta L(\theta,\theta^j)</script></li>
+</ol>
+</li>
+<li><p>如果$\theta^{j+1}$已收敛，则算法结束。否则继续进行E步迭代。</p>
+</li>
+</ol>
+<p>输出：模型参数$\theta$。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/15/NLP-02-TextRank/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -395,7 +1549,7 @@ PMI=p(x,y)\log_2\frac{p(x,y)}{p(x)p(y)}</script><h3 id="合词"><a href="#合词
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

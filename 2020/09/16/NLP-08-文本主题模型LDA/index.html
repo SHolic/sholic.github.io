@@ -27,13 +27,13 @@
 <meta property="og:site_name" content="SHolic的博客">
 <meta property="og:description" content="模型原理pLSA与LDA差别及要点 pLSA是频率学派的，LDA是贝叶斯学派的，LDA为pLSA的两个参数$p(\omega|z)$和$p(z|d)$加了先验分布，即Dirichlet分布。 pLSA跟LDA的本质区别就在于它们去估计未知参数所采用的思想不同。前者是EM算法，通过$\phi_{k,j}$和$\theta_{i,k}$算出隐参数$z$的分布$p(z|d,\omega)$，然后通过最大">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/img/LDA1.png">
-<meta property="og:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/img/LDA2.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/NLPimg/LDA1.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/NLPimg/LDA2.png">
 <meta property="article:published_time" content="2020-09-16T01:39:51.000Z">
-<meta property="article:modified_time" content="2020-09-16T01:47:53.938Z">
+<meta property="article:modified_time" content="2020-09-16T02:11:15.391Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/img/LDA1.png">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/NLPimg/LDA1.png">
 
 <link rel="canonical" href="http://example.com/2020/09/16/NLP-08-%E6%96%87%E6%9C%AC%E4%B8%BB%E9%A2%98%E6%A8%A1%E5%9E%8BLDA/">
 
@@ -182,7 +182,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2020-09-16 09:39:51 / 修改时间：09:47:53" itemprop="dateCreated datePublished" datetime="2020-09-16T09:39:51+08:00">2020-09-16</time>
+              <time title="创建时间：2020-09-16 09:39:51 / 修改时间：10:11:15" itemprop="dateCreated datePublished" datetime="2020-09-16T09:39:51+08:00">2020-09-16</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -237,7 +237,7 @@ Dirichlet(\vec{p}|\vec{\alpha})+MultiCount(\vec{m})=Dirichlet(\vec{p}|\vec{\alph
 <li>选定$z_k$后，从词分布中按照概率$P(w_j|z_k)$（分布$\phi$由参数$\alpha$决定）选择一个词$w_j$</li>
 </ol>
 <p>如下图：</p>
-<p><img src="img\LDA1.png" alt="LDA1"></p>
+<p><img src="NLPimg\LDA1.png" alt="LDA1"></p>
 <h3 id="训练方法"><a href="#训练方法" class="headerlink" title="训练方法"></a>训练方法</h3><h4 id="Gibbs采样"><a href="#Gibbs采样" class="headerlink" title="Gibbs采样"></a>Gibbs采样</h4><p>在Unigram条件下，也就是不存在隐参数$z$的情况下：</p>
 <script type="math/tex; mode=display">
 p(\vec w|\vec\alpha)=\int p(\vec w|\vec p)p(\vec p|\vec\alpha)d\vec p=\frac{\Delta(\vec n+\vec\alpha)}{\Delta(\vec\alpha)}</script><p>其中，</p>
@@ -266,7 +266,7 @@ p(x|\theta)=h(x)\exp(\eta(\theta)*T(x)-A(\theta))</script><p>$A(\theta)$为归�
 <script type="math/tex; mode=display">
 \frac{d}{d\eta(\theta)}A(\theta)=E_{p(x|\theta)}[T(x)]</script><p>可以把期望转化成求导。</p>
 <p>LDA的变分推断用$q(\theta,\phi,z|\gamma,\lambda,\eta)$来估计$p(\theta,\phi,z|\alpha,\beta,\omega)$，如下图：</p>
-<p><img src="img\LDA2.png" alt="LDA2"></p>
+<p><img src="NLPimg\LDA2.png" alt="LDA2"></p>
 <p>图二把图一解耦了，用数学语言来表示</p>
 <script type="math/tex; mode=display">
 q(\theta,\phi,z|\gamma,\lambda,\eta)=\prod_{k=1}^Kq(\phi_k|\lambda_k)\prod_{d=1}^M(q(\theta_d|\gamma_d)\prod_{n=1}^Nq(z|\eta))</script><p>参数估计需要两步，第一步通过极大化ELBO估计$(\gamma,\lambda,\eta)$，然后用EM算法求解$(\alpha,\beta)$。</p>
@@ -431,7 +431,7 @@ L(\gamma,\lambda,\eta;\alpha,\beta)&=E_q\log p(\theta,\phi,z,w|\alpha,\beta)-E_q
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

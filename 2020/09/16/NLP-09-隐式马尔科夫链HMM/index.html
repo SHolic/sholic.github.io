@@ -27,14 +27,14 @@
 <meta property="og:site_name" content="SHolic的博客">
 <meta property="og:description" content="模型原理HMM模型特征  问题是基于序列的，比如时间序列，或者状态序列。 问题中有两类数据，一类序列数据是可以观测到的，即观测序列；而另一类数据是不能观察到的，即隐藏状态序列，简称状态序列。   HMM定义  假设$Q&#x3D;\lbrace q_1,q_2,\ldots,q_N\rbrace$是所有可能的隐藏状态的集合，$V&#x3D;\lbrace v_1,v_2,\ldots,v_M\rbrace$ 是所有可">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/img/hmm3.jpg">
-<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/img/hmm1.png">
-<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/img/hmm2.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/NLPimg/hmm3.jpg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/NLPimg/hmm1.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/NLPimg/hmm2.png">
 <meta property="article:published_time" content="2020-09-16T01:41:24.000Z">
-<meta property="article:modified_time" content="2020-09-16T01:47:58.416Z">
+<meta property="article:modified_time" content="2020-09-16T02:11:21.768Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/img/hmm3.jpg">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/NLPimg/hmm3.jpg">
 
 <link rel="canonical" href="http://example.com/2020/09/16/NLP-09-%E9%9A%90%E5%BC%8F%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BEHMM/">
 
@@ -183,7 +183,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2020-09-16 09:41:24 / 修改时间：09:47:58" itemprop="dateCreated datePublished" datetime="2020-09-16T09:41:24+08:00">2020-09-16</time>
+              <time title="创建时间：2020-09-16 09:41:24 / 修改时间：10:11:21" itemprop="dateCreated datePublished" datetime="2020-09-16T09:41:24+08:00">2020-09-16</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -212,7 +212,7 @@
 <li>问题中有两类数据，一类序列数据是可以观测到的，即观测序列；而另一类数据是不能观察到的，即隐藏状态序列，简称状态序列。 </li>
 </ol>
 <p><strong>HMM定义</strong></p>
-<p><img src="img\hmm3.jpg" alt="hmm3"></p>
+<p><img src="NLPimg\hmm3.jpg" alt="hmm3"></p>
 <p>假设$Q=\lbrace q_1,q_2,\ldots,q_N\rbrace$是所有可能的隐藏状态的集合，$V=\lbrace v_1,v_2,\ldots,v_M\rbrace$ 是所有可能的观测状态的集合</p>
 <p>对于一个长度为$T$的序列，$I=\lbrace i_1,i_2,\ldots,i_T\rbrace$是对应的状态序列，$O=\lbrace o_1,o_2,\ldots,o_T\rbrace$是对应的观察序列 </p>
 <p>齐次马尔科夫链假设。即任意时刻的隐藏状态只依赖于它前一个隐藏状态 :</p>
@@ -235,10 +235,10 @@ B=\begin{bmatrix}b_j(k)\end{bmatrix}_{N\times M}</script><p> 在时刻$t=1$的�
 P(O|\lambda)=\sum_IP(O,I|\lambda)=\sum_{i_1,i_2,\ldots,i_T}\pi_{i_1}b_{i_1}(o_1)a_{i_1 i_2}b_{i_2}(o_2)\ldots a_{i_{T-1} i_T}b_{i_T}(o_T)</script><p><strong>前后向算法求解</strong></p>
 <p>$\alpha_T(i)$表示在时刻$T$观测序列为$o_1,o_2,\ldots,o_T$，并且时刻$T$隐藏状态$q_i$的概率</p>
 <script type="math/tex; mode=display">
-\alpha_{t+1}(i)=\Big[\sum_{j=1}^N\alpha_t(j)a_{ji}\Big]b_i(o_{t+1}),i=1,2,\ldots,N</script><p><img src="img\hmm1.png" alt="hmm1"></p>
+\alpha_{t+1}(i)=\Big[\sum_{j=1}^N\alpha_t(j)a_{ji}\Big]b_i(o_{t+1}),i=1,2,\ldots,N</script><p><img src="NLPimg\hmm1.png" alt="hmm1"></p>
 <p>$\beta_t(i)$表示在时刻$t+1$到最后时刻$T$观测序列为$o_{t+1},o_{t+2},\ldots,o_T$，并且时刻$t$隐藏状态$q_i$的概率</p>
 <script type="math/tex; mode=display">
-\beta_{t}(i)=\sum_{j=1}^Na_{ij}b_j(o_{t+1})\beta_{t+1}(j),i=1,2,\ldots,N</script><p><img src="img\hmm2.png" alt="hmm2"></p>
+\beta_{t}(i)=\sum_{j=1}^Na_{ij}b_j(o_{t+1})\beta_{t+1}(j),i=1,2,\ldots,N</script><p><img src="NLPimg\hmm2.png" alt="hmm2"></p>
 <p><strong>常用概率计算</strong></p>
 <ol>
 <li>给定模型$\lambda$和观测序列$O$,在时刻$t$处于状态$q_i$的概率记为：</li>
@@ -442,7 +442,7 @@ i^*_T=\Psi_{t+1}(i^*_{t+1})</script><p>最终得到最有可能的隐藏状态�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

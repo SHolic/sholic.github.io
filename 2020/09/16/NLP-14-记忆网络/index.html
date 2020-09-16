@@ -20,17 +20,23 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="分类">
-<meta property="og:url" content="http://example.com/categories/index.html">
+  <meta name="description" content="RNN结构RNN是有时序的，每个时序里，都是单元的重复   在第$t$时刻时，假定输入为$x_t$，隐状态向量为$h_{t−1}$，则下一隐状态$h_t$则由下式产生  h_t&#x3D;\tanh(Wx_t+Uh_{t-1}+b)其中，$\tanh$将信息整理到区间(-1,1)，生成候选信息。 $x_t$是$n\times1$的列向量，$h_t$是$m\times1$的列向量。矩阵$W$的维数是$m\ti">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NLP-14-记忆网络">
+<meta property="og:url" content="http://example.com/2020/09/16/NLP-14-%E8%AE%B0%E5%BF%86%E7%BD%91%E7%BB%9C/index.html">
 <meta property="og:site_name" content="SHolic的博客">
+<meta property="og:description" content="RNN结构RNN是有时序的，每个时序里，都是单元的重复   在第$t$时刻时，假定输入为$x_t$，隐状态向量为$h_{t−1}$，则下一隐状态$h_t$则由下式产生  h_t&#x3D;\tanh(Wx_t+Uh_{t-1}+b)其中，$\tanh$将信息整理到区间(-1,1)，生成候选信息。 $x_t$是$n\times1$的列向量，$h_t$是$m\times1$的列向量。矩阵$W$的维数是$m\ti">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-09-16T01:48:23.000Z">
-<meta property="article:modified_time" content="2020-09-16T01:48:46.804Z">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-14-%E8%AE%B0%E5%BF%86%E7%BD%91%E7%BB%9C/NLPimg/memory1.jpg">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-14-%E8%AE%B0%E5%BF%86%E7%BD%91%E7%BB%9C/NLPimg/memory2.png">
+<meta property="og:image" content="http://example.com/2020/09/16/NLP-14-%E8%AE%B0%E5%BF%86%E7%BD%91%E7%BB%9C/NLPimg/memory3.png">
+<meta property="article:published_time" content="2020-09-16T02:04:56.000Z">
+<meta property="article:modified_time" content="2020-09-16T02:13:03.022Z">
 <meta property="article:author" content="sholic">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2020/09/16/NLP-14-%E8%AE%B0%E5%BF%86%E7%BD%91%E7%BB%9C/NLPimg/memory1.jpg">
 
-<link rel="canonical" href="http://example.com/categories/">
+<link rel="canonical" href="http://example.com/2020/09/16/NLP-14-%E8%AE%B0%E5%BF%86%E7%BD%91%E7%BB%9C/">
 
 
 <script id="page-configurations">
@@ -38,13 +44,12 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>分类 | SHolic的博客
-</title>
+  <title>NLP-14-记忆网络 | SHolic的博客</title>
   
 
 
@@ -146,51 +151,134 @@
       <div class="main-inner">
         <div class="content-wrap">
           
-  
-  
 
-          <div class="content page posts-expand">
+          <div class="content post posts-expand">
             
 
     
-    
-    
-    <div class="post-block" lang="zh-CN">
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/16/NLP-14-%E8%AE%B0%E5%BF%86%E7%BD%91%E7%BB%9C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sholic">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="SHolic的博客">
+    </span>
       <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NLP-14-记忆网络
+        </h1>
 
-<h1 class="post-title" itemprop="name headline">分类
-</h1>
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
 
-<div class="post-meta">
+              <time title="创建时间：2020-09-16 10:04:56 / 修改时间：10:13:03" itemprop="dateCreated datePublished" datetime="2020-09-16T10:04:56+08:00">2020-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">自然语言处理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="RNN结构"><a href="#RNN结构" class="headerlink" title="RNN结构"></a>RNN结构</h2><p>RNN是有时序的，每个时序里，都是单元的重复 </p>
+<p><img src="NLPimg\memory1.jpg" alt="elmo1"></p>
+<p>在第$t$时刻时，假定输入为$x_t$，隐状态向量为$h_{t−1}$，则下一隐状态$h_t$则由下式产生</p>
+<script type="math/tex; mode=display">
+h_t=\tanh(Wx_t+Uh_{t-1}+b)</script><p>其中，$\tanh$将信息整理到区间(-1,1)，生成候选信息。</p>
+<p>$x_t$是$n\times1$的列向量，$h_t$是$m\times1$的列向量。矩阵$W$的维数是$m\times n$，矩阵$U$的维数是$m\times m$，$b$是$m\times1$的列向量。参数个数$mn+mm+m=m(n+m+1)$</p>
+<h2 id="LSTM结构"><a href="#LSTM结构" class="headerlink" title="LSTM结构"></a>LSTM结构</h2><p>LSTM比RNN多了遗忘门，解决长时依赖问题和梯度消失问题</p>
+<p><img src="NLPimg\memory2.png" alt="elmo2"></p>
+<ul>
+<li>输入门$i_t$，控制保留多少当前记忆</li>
+<li>遗忘门$f_t$，控制保留多少之前记忆</li>
+<li>规范后的信息$g_t$</li>
+<li>输出门$o_t$，控制保留多少单元状态</li>
+<li>单元状态$c_t$</li>
+<li>隐藏状态$h_t$</li>
+</ul>
+<p>各种门代表各种信息的筛选比例，单元状态$c_t$是<strong>筛选过的当前信息</strong>和<strong>筛选过的过去信息</strong>的加权平均</p>
+<p>公式如下：</p>
+<script type="math/tex; mode=display">
+i_t=\sigma(W^ix_t+U^ih_{t-1}+b^i)</script><script type="math/tex; mode=display">
+f_t=\sigma(W^fx_t+U^fh_{t-1}+b^f)</script><script type="math/tex; mode=display">
+o_t=\sigma(W^ox_t+U^oh_{t-1}+b^o)</script><script type="math/tex; mode=display">
+g_t=\tanh(W^gx_t+U^gh_{t-1}+b^g)</script><script type="math/tex; mode=display">
+c_t=f_t\odot c_{t-1}+i_t\odot g_t</script><script type="math/tex; mode=display">
+h_t=o_t\odot\tanh(c_t)</script><p>其中，$\tanh$将信息整理到区间(-1,1)，生成候选信息；$\sigma$将信息整理到区间(0,1)，表示允许信息通过的多少。</p>
+<p>输入依然为$x_t$，维度为$n\times1$的列向量。输出及隐状态$h_t$是$m\times1$的列向量。 $c_t$是携带信息的列向量，向量维度是$m\times1$。$W$系列的维度与RNN的$W$一致，均为$m\times n$。$U$与RNN的$U$一致，均为$m\times m$。$b$系列的维度是$m\times1$的列向量。参数的总个数是$4m(n+m+1)$</p>
+<h2 id="GRU结构"><a href="#GRU结构" class="headerlink" title="GRU结构"></a>GRU结构</h2><p>是LSTM的变体，只有重置门和更新门。</p>
+<p><img src="NLPimg\memory3.png" alt="memory3"></p>
+<ul>
+<li>重置门$r_t$，控制保留多少之前记忆</li>
+<li>更新门$z_t$，控制保留多少当前记忆</li>
+<li>规范且重置后的隐藏信息$\tilde h_t$</li>
+<li>隐藏信息$h_t$</li>
+</ul>
+<p>各种门代表各种信息的筛选比例，隐藏状态$h_t$是<strong>筛选过的当前信息</strong>和<strong>筛选过的过去信息</strong>的加权平均</p>
+<p>公式如下：</p>
+<script type="math/tex; mode=display">
+z_t=\sigma(W^zx_t+U^zh_{t-1}+b^z)</script><script type="math/tex; mode=display">
+r_t=\sigma(W^rx_t+U^rh_{t-1}+b^z)</script><script type="math/tex; mode=display">
+\tilde h_t=\tanh(W^hx_t+U^h(r_t*h_{t-1})+b^h)</script><script type="math/tex; mode=display">
+h_T=(1-z_t)*h_{t-1}+z_t*\tilde h_t</script><p>其中，$\tanh$将信息整理到区间(-1,1)，生成候选信息；$\sigma$将信息整理到区间(0,1)，表示允许信息通过的多少。</p>
+<p>如果$r_t$为1，而$z_t$为0 那么相当于变成了一个标准的RNN，能处理短距离依赖</p>
+<p>输入依然为$x_t$，维度为$n\times1$的列向量。输出及隐状态$h_t$是$m\times1$的列向量。$W$系列的维度与RNN的$W$一致，均为$m\times n$。$U$与RNN的$U$一致，均为$m\times m$。$b$系列的维度是$m\times1$的列向量。参数的总个数是$3m(n+m+1)$</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-13-fastText/" rel="prev" title="NLP-13-fastText">
+      <i class="fa fa-chevron-left"></i> NLP-13-fastText
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/NLP-15-ELMo/" rel="next" title="NLP-15-ELMo">
+      NLP-15-ELMo <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
   
 
-</div>
-
-</header>
-
-      
-      
-      
-      <div class="post-body">
-          <div class="category-all-page">
-            <div class="category-all-title">
-              目前共计 1 个分类
-            </div>
-            <div class="category-all">
-              <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/">自然语言处理</a><span class="category-list-count">20</span></li></ul>
-            </div>
-          </div>
-        
-      </div>
-      
-      
-      
-    </div>
-    
-
-    
-    
-    
 
 
           </div>
@@ -241,6 +329,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#RNN%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">RNN结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LSTM%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">LSTM结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GRU%E7%BB%93%E6%9E%84"><span class="nav-number">3.</span> <span class="nav-text">GRU结构</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
